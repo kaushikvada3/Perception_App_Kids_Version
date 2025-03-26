@@ -426,7 +426,9 @@
       const missed = window.missed || 0;
 
       function norminv(p) {
-        if (p === 0) p = 0.0001;
+        if (p <= 0) p = 0.0001;
+        if (p >= 1) p = 0.9999;
+
         const a1 = -39.69683028665376;
         const a2 = 220.9460984245205;
         const a3 = -275.9285104469687;
@@ -434,10 +436,10 @@
         const a5 = -30.66479806614716;
         const a6 = 2.506628277459239;
 
-        const t = 1 / (1 + 0.2316419 * Math.abs(p));
-        const d = 0.3989422804014337 * Math.exp(-p * p / 2);
-        const x = ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t;
-        return 1 - d * x;
+        const t = 1.0 / (1.0 + 0.2316419 * p);
+        const z = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-p * p / 2.0);
+
+        return z;
       }
 
       let fractHit = 0, fractCR = 0;
