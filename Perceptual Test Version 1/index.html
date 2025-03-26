@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sensory Safari</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: url('Images/Background.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .container {
+      background-color: rgba(0, 0, 0, 0.7);
+      max-width: 700px;
+      margin: 50px auto;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      color: #fff;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type=range] {
+      width: 100%;
+    }
+    .animal-options {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+      gap: 20px;
+      scroll-snap-type: x mandatory;
+      padding: 10px 0;
+    }
+    .animal-option {
+      flex: 0 0 auto;
+      text-align: center;
+      scroll-snap-align: center;
+      cursor: pointer;
+      transition: transform 0.3s;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      padding: 10px;
+      color: white;
+    }
+    .animal-option img {
+      width: 100px;
+      height: 100px;
+      border-radius: 10px;
+      padding: 5px;
+    }
+    .animal-option.selected {
+      border-color: gold;
+      transform: scale(1.1);
+    }
+    button {
+      display: block;
+      margin: 20px auto 0;
+      background-color: #28a745;
+      color: white;
+      padding: 10px 25px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.1);
+    }
+    #countdown, #test, #gameOver {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+    }
+    #wave-container {
+      position: relative;
+      height: 300px;
+      border: 2px solid #fff;
+      margin: 20px;
+      overflow: hidden;
+    }
+    @keyframes moveRight {
+      from { left: -150px; }
+      to { left: 100%; }
+    }
+    @keyframes moveLeft {
+      from { left: 100%; }
+      to { left: -150px; }
+    }
+    @keyframes easyMove {
+      0% { left: -100px; top: 50%; }
+      100% { left: 100%; top: 50%; }
+    }
+    @keyframes mediumMove {
+      0% { left: -100px; top: 100%; }
+      100% { left: 100%; top: -50px; }
+    }
+    @keyframes hardMove {
+      0% { left: -100px; top: -100px; }
+      100% { left: 100%; top: 100%; }
+    }
+    @keyframes veryHardMove {
+      0% { left: -100px; top: -100px; }
+      100% { left: 100%; top: 100%; }
+    }
+    .animal-row {
+      position: relative;
+      height: 300px;
+      overflow: hidden;
+    }
+    .moving-animal {
+      position: absolute;
+      width: 100px;
+      height: auto;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    @keyframes easyMoveMultiple {
+      0% { left: -120px; }
+      100% { left: 100%; }
+    }
+    @keyframes mediumMoveMultiple {
+      0% { left: -120px; top: 100%; }
+      100% { left: 100%; top: -50px; }
+    }
+    @keyframes hardMoveMultiple {
+      0% { left: -120px; top: -120px; }
+      100% { left: 100%; top: 100%; }
+    }
+    @keyframes veryHardMoveMultiple {
+      0% { left: -120px; top: -120px; }
+      100% { left: 100%; top: 100%; }
+    }
+    @keyframes easyMoveMultipleReverse {
+      0% { left: 100%; }
+      100% { left: -120px; }
+    }
+    @keyframes mediumMoveMultipleReverse {
+      0% { left: 100%; top: -50px; }
+      100% { left: -120px; top: 100%; }
+    }
+    @keyframes hardMoveMultipleReverse {
+      0% { left: 100%; top: 100%; }
+      100% { left: -120px; top: -120px; }
+    }
+    @keyframes veryHardMoveMultipleReverse {
+      0% { left: 100%; top: 100%; }
+      100% { left: -120px; top: -120px; }
+    }
+
+    .animal-option:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="home">
+    <h1>🌴 Sensory Safari 🌴</h1>
+    <div class="form-group">
+      <label for="numTries">Number of Tries:</label>
+      <input type="range" id="numTries" min="1" max="10" value="5" />
+      <span id="numTriesValue">5</span>
+    </div>
+    <div class="form-group">
+      <label>Choose Your Animal (Difficulty):</label>
+      <div class="animal-options" id="animalList">
+        <div class="animal-option" data-difficulty="easy">
+          <img src="Images/Turtle/turtle.jpeg" alt="Turtle" id="turtleImg" onmouseover="this.src='Images/Turtle/turtle_celebrate.jpeg'" onmouseout="this.src='Images/Turtle/turtle.jpeg'" />
+          <div>Turtle</div>
+        </div>
+        <div class="animal-option" data-difficulty="medium">
+          <img src="Images/Cat/cat.jpeg" alt="Cat" id="catImg" onmouseover="this.src='Images/Cat/cat_jumping.jpeg'" onmouseout="this.src='Images/Cat/cat.jpeg'" />
+          <div>Cat</div>
+        </div>
+        <div class="animal-option" data-difficulty="hard">
+          <img 
+            src="Images/Owl/owl_on_branch.jpeg" 
+            alt="Owl" 
+            id="owlImg" 
+            onmouseover="this.src='Images/Owl/owl_off_branch.jpeg'" 
+            onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" 
+          />
+          <div>Owl</div>
+        </div>
+        <div class="animal-option" data-difficulty="adaptive">
+          <img 
+            src="Images/Monkey/monkey_before_swing.jpeg" 
+            alt="Monkey" 
+            id="monkeyImg" 
+            onmouseover="this.src='Images/Monkey/monkey_after_swing.jpeg'" 
+            onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" 
+          />
+          <div>Monkey</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="stimDuration">Stimulus Duration (sec):</label>
+      <input type="range" id="stimDuration" min="1" max="10" value="3" />
+      <span id="stimDurationValue">3</span>
+    </div>
+    <div class="form-group">
+      <label for="outcomeDuration">Outcome Duration (sec):</label>
+      <input type="range" id="outcomeDuration" min="1" max="10" value="2" />
+      <span id="outcomeDurationValue">2</span>
+    </div>
+    <div class="form-group">
+      <label>Sound?</label>
+      <input type="checkbox" id="soundToggle" />
+    </div>
+    <button onclick="startGame()">Go!</button>
+  </div>
+
+  <div id="countdown">
+    <h2>Get Ready...</h2>
+    <p id="countdownTimer">3</p>
+  </div>
+
+  <div id="test">
+    <h2>Task <span id="taskNum">1</span></h2>
+    <div id="wave-container" class="animal-row"></div>
+    <div id="buttons" style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+      <button onclick="handleResponse('P')">P</button>
+      <button onclick="handleResponse('Q')">Q</button>
+    </div>
+    <p id="score">Score: 0</p>
+  </div>
+
+  <div id="gameOver">
+    <h2>All Done!</h2>
+    <p id="finalScore"></p>
+    <button onclick="location.reload()">Restart</button>
+  </div>
+
+  <script>
+    let selections = {};
+    let selectedDifficulty = null;
+    let tries = 5, score = 0, currentTry = 0;
+
+    // Link sliders to values
+    ['numTries', 'stimDuration', 'outcomeDuration'].forEach(id => {
+      const input = document.getElementById(id);
+      const span = document.getElementById(id + 'Value');
+      input.addEventListener('input', () => span.textContent = input.value);
+    });
+
+    document.querySelectorAll('.animal-option').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.animal-option').forEach(opt => opt.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedDifficulty = el.getAttribute('data-difficulty');
+      });
+    });
+
+    function startGame() {
+      if (!selectedDifficulty) {
+        alert("Please select an animal difficulty.");
+        return;
+      }
+      selections = {
+        numTries: +document.getElementById('numTries').value,
+        stimDuration: +document.getElementById('stimDuration').value,
+        outcomeDuration: +document.getElementById('outcomeDuration').value,
+        soundOn: document.getElementById('soundToggle').checked,
+        difficulty: selectedDifficulty
+      };
+      tries = selections.numTries;
+      document.getElementById('home').style.display = 'none';
+      document.getElementById('countdown').style.display = 'block';
+      startCountdown();
+    }
+
+    function startCountdown() {
+      let count = 3;
+      const el = document.getElementById('countdownTimer');
+      const interval = setInterval(() => {
+        el.textContent = count--;
+        if (count < 0) {
+          clearInterval(interval);
+          document.getElementById('countdown').style.display = 'none';
+          document.getElementById('test').style.display = 'block';
+          runTask();
+        }
+      }, 1000);
+    }
+
+    function runTask() {
+      if (currentTry >= tries) {
+        document.getElementById('test').style.display = 'none';
+        document.getElementById('gameOver').style.display = 'block';
+        document.getElementById('finalScore').textContent = `Score: ${score} / ${tries}`;
+        return;
+      }
+
+      document.getElementById('taskNum').textContent = currentTry + 1;
+
+      const waveContainer = document.getElementById('wave-container');
+      waveContainer.innerHTML = ''; // clear previous animals
+      const difficulty = selections.difficulty;
+      const direction = Math.random() > 0.5 ? 'Forward' : 'Backward';
+      const animClass = {
+        easy: direction === 'Forward' ? 'easyMoveMultiple' : 'easyMoveMultipleReverse',
+        medium: direction === 'Forward' ? 'mediumMoveMultiple' : 'mediumMoveMultipleReverse',
+        hard: direction === 'Forward' ? 'hardMoveMultiple' : 'hardMoveMultipleReverse',
+        adaptive: direction === 'Forward' ? 'veryHardMoveMultiple' : 'veryHardMoveMultipleReverse'
+      }[difficulty];
+
+      for (let i = 0; i < 5; i++) {
+        const img = document.createElement('img');
+        img.src = document.querySelector('.animal-option.selected img').src;
+        img.className = 'moving-animal';
+        img.style.animation = `${animClass} ${2 + i * 0.3}s linear ${i * 0.5}s forwards`;
+        img.style.zIndex = 5 - i; // Ensure layering flows naturally
+        waveContainer.appendChild(img);
+      }
+
+      window.correctAnswer = direction === 'Forward' ? 'P' : 'Q';
+      currentTry++;
+    }
+
+    function handleResponse(key) {
+      if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
+        score++;
+      }
+      document.getElementById('score').textContent = `Score: ${score}`;
+      runTask();
+    }
+  </script>
+</body>
+</html>
