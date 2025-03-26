@@ -110,6 +110,23 @@
       transform: scale(1.1);
       box-shadow: 0 0 10px #fff, 0 0 20px #28a745;
     }
+    #buttons button {
+      background-color: #4CAF50; /* vibrant green */
+      border: none;
+      color: white;
+      padding: 20px 35px;
+      text-align: center;
+      font-size: 2em;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #fff, 0 0 20px #4CAF50;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #buttons button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px #fff, 0 0 25px #45a049;
+    }
     #countdown {
       display: none;
       text-align: center;
@@ -326,16 +343,21 @@
       <button onclick="handleResponse('P')">P</button>
       <button onclick="handleResponse('Q')">Q</button>
     </div>
-    <p id="score">Score: 0</p>
+    <p id="score" style="color: #FFD700; font-size: 2em; text-shadow: 2px 2px 5px #000;">Score: 0</p>
   </div>
 
   <div id="gameOver">
-    <h2>All Done!</h2>
-    <p id="finalScore"></p>
-    <button onclick="location.reload()">Restart</button>
+    <h2 style="color: white; font-size: 2.5em; text-shadow: 2px 2px 5px #000;">All Done!</h2>
+    <p id="finalScore" style="color: #FFD700; font-size: 2em; font-weight: bold; text-shadow: 2px 2px 5px #000;">Score: 0 / 0</p>
+    <button onclick="location.reload()" style="background-color: #28a745; font-size: 1.5em;">Restart</button>
   </div>
 
   <script>
+    window.correctRight = 0;
+    window.incorrectRight = 0;
+    window.correctLeft = 0;
+    window.incorrectLeft = 0;
+    window.missed = 0;
     const beepAudio = new Audio('beep.wav');
     let selections = {};
     let selectedDifficulty = null;
@@ -395,9 +417,61 @@
           beepAudio.currentTime = 0;
         }
         document.getElementById('test').style.display = 'none';
-        document.getElementById('gameOver').style.display = 'block';
-        document.getElementById('finalScore').textContent = `Score: ${score} / ${tries}`;
-        return;
+      document.getElementById('gameOver').style.display = 'block';
+      
+      const correctRight = window.correctRight || 0;
+      const incorrectRight = window.incorrectRight || 0;
+      const correctLeft = window.correctLeft || 0;
+      const incorrectLeft = window.incorrectLeft || 0;
+      const missed = window.missed || 0;
+
+      function norminv(p) {
+        if (p === 0) p = 0.0001;
+        const a1 = -39.69683028665376;
+        const a2 = 220.9460984245205;
+        const a3 = -275.9285104469687;
+        const a4 = 138.357751867269;
+        const a5 = -30.66479806614716;
+        const a6 = 2.506628277459239;
+
+        const t = 1 / (1 + 0.2316419 * Math.abs(p));
+        const d = 0.3989422804014337 * Math.exp(-p * p / 2);
+        const x = ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t;
+        return 1 - d * x;
+      }
+
+      let fractHit = 0, fractCR = 0;
+      const totalRight = correctRight + incorrectRight + missed / 2;
+      const totalLeft = correctLeft + incorrectLeft + missed / 2;
+      if (totalRight !== 0) fractHit = correctRight / totalRight;
+      if (totalLeft !== 0) fractCR = incorrectLeft / totalLeft;
+
+      const dp1 = norminv(fractHit);
+      const dp2 = norminv(fractCR);
+      const ResultScore = (dp1 - dp2).toFixed(3);
+      
+      const interpretation = document.createElement('p');
+      interpretation.style.color = 'white';
+      interpretation.style.fontSize = '1.5em';
+      interpretation.style.marginTop = '10px';
+      interpretation.style.textShadow = '2px 2px 5px #000';
+      
+      if (ResultScore > 1.5) {
+        interpretation.textContent = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
+      } else if (ResultScore > 0.5) {
+        interpretation.textContent = 'Moderate sensory recognition. Performance is above average.';
+      } else if (ResultScore > 0) {
+        interpretation.textContent = 'Slightly better than guessing. May suggest some perceptual difficulty.';
+      } else if (ResultScore == 0) {
+        interpretation.textContent = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
+      } else {
+        interpretation.textContent = 'Performance is below chance. May suggest difficulty with sensory perception.';
+      }
+      
+      document.getElementById('gameOver').appendChild(interpretation);
+
+      document.getElementById('finalScore').textContent = `Score: ${score} / ${tries} | Metric: ${ResultScore}`;
+      return;
       }
 
       document.getElementById('taskNum').textContent = currentTry + 1;
@@ -440,12 +514,16 @@
       console.log('Correct Answer:', window.correctAnswer);
       alert(`You pressed: ${key.toUpperCase()} — Correct was: ${window.correctAnswer.toUpperCase()}`);
 
-      if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
-        score++;
-        console.log('Correct! Score:', score);
-      } else {
-        console.log('Incorrect.');
-      }
+    if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
+      score++;
+      if (key.toUpperCase() === 'Q') window.correctRight++;
+      else if (key.toUpperCase() === 'P') window.correctLeft++;
+      console.log('Correct! Score:', score);
+    } else {
+      if (key.toUpperCase() === 'Q') window.incorrectRight++;
+      else if (key.toUpperCase() === 'P') window.incorrectLeft++;
+      console.log('Incorrect.');
+    }
 
       document.getElementById('score').textContent = `Score: ${score}`;
       if (selections.soundOn) {
