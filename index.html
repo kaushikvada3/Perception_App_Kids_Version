@@ -393,6 +393,7 @@
   <script>
     let responseTimeout;
     let backgroundCycleInterval = null;
+    let visualCountdownInterval = null;
     let currentBackgroundIndex = 0;
     const backgrounds = [
       'Images/Background_1.jpeg',
@@ -588,11 +589,15 @@
           let countdownValue = 3;
           const countdownEl = document.getElementById('responseCountdown');
           countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
- 
-          const visualCountdown = setInterval(() => {
+
+          if (visualCountdownInterval) {
+            clearInterval(visualCountdownInterval);
+          }
+
+          visualCountdownInterval = setInterval(() => {
             countdownValue--;
             if (window.responseGiven) {
-              clearInterval(visualCountdown);
+              clearInterval(visualCountdownInterval);
               countdownEl.textContent = '';
               return;
             }
@@ -600,7 +605,7 @@
               countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
             }
             if (countdownValue < 0) {
-              clearInterval(visualCountdown);
+              clearInterval(visualCountdownInterval);
               countdownEl.textContent = '';
               if (!window.responseGiven) {
                 if (direction === 'Forward') {
@@ -622,6 +627,7 @@
       document.getElementById('responseCountdown').textContent = '';
       console.log('User Pressed:', key);
       console.log('Correct Answer:', window.correctAnswer);
+      clearInterval(visualCountdownInterval);
 
     if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
       score++;
