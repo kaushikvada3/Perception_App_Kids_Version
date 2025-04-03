@@ -13,7 +13,7 @@
       color: #fff;
     }
     .container {
-      background-color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(0, 0, 0, 0.4);
       max-width: 700px;
       margin: 50px auto;
       padding: 20px;
@@ -147,6 +147,7 @@
       height: 300px;
       border: 2px solid #fff;
       margin: 20px;
+      background-color: rgba(255, 255, 255,0.85); /* 95% white translucent */
       overflow: hidden;
     }
     @keyframes moveRight {
@@ -180,7 +181,7 @@
     }
     .moving-animal {
       position: absolute;
-      width: 100px;
+      width: 150px;
       height: auto;
       top: 50%;
       transform: translateY(-50%);
@@ -272,8 +273,47 @@
       border-color: #28a745;
     }
   </style>
-</head>
+  <style>
+    /* .flashing-lights {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      height: 40px;
+      display: flex;
+      justify-content: space-around;
+      z-index: 1000;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+ 
+    .light {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background-color: red;
+      animation: flash 1s infinite alternate;
+    }
+ 
+    .light:nth-child(2) { background-color: green; animation-delay: 0.2s; }
+    .light:nth-child(3) { background-color: blue; animation-delay: 0.4s; }
+    .light:nth-child(4) { background-color: yellow; animation-delay: 0.6s; }
+    .light:nth-child(5) { background-color: pink; animation-delay: 0.8s; }
+ 
+    @keyframes flash {
+      from { opacity: 0.2; }
+      to { opacity: 1; }
+    } */
+    </style>
+  </head>
 <body>
+  <!--
+  <div id="flashingLights" class="flashing-lights" style="display: none;">
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+  </div>
+  -->
   <div class="container" id="home">
     <h1>🌴 Sensory Safari 🌴</h1>
     <div class="form-group">
@@ -283,33 +323,21 @@
     </div>
     <div class="form-group">
       <label>Choose Your Animal (Difficulty):</label>
-      <div class="animal-options" id="animalList">
-        <div class="animal-option" data-difficulty="easy">
+      <div class="animal-options" id="animalList" style="overflow-x: scroll; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
+        <div class="animal-option" data-difficulty="easy" style="scroll-snap-align: center;">
           <img src="Images/Turtle/turtle.jpeg" alt="Turtle" id="turtleImg" onmouseover="this.src='Images/Turtle/turtle_celebrate.jpeg'" onmouseout="this.src='Images/Turtle/turtle.jpeg'" />
           <div>Turtle</div>
         </div>
-        <div class="animal-option" data-difficulty="medium">
+        <div class="animal-option" data-difficulty="medium" style="scroll-snap-align: center;">
           <img src="Images/Cat/cat.jpeg" alt="Cat" id="catImg" onmouseover="this.src='Images/Cat/cat_jumping.jpeg'" onmouseout="this.src='Images/Cat/cat.jpeg'" />
           <div>Cat</div>
         </div>
-        <div class="animal-option" data-difficulty="hard">
-          <img 
-            src="Images/Owl/owl_on_branch.jpeg" 
-            alt="Owl" 
-            id="owlImg" 
-            onmouseover="this.src='Images/Owl/owl_off_branch.jpeg'" 
-            onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" 
-          />
+        <div class="animal-option" data-difficulty="hard" style="scroll-snap-align: center;">
+          <img src="Images/Owl/owl_on_branch.jpeg" alt="Owl" id="owlImg" onmouseover="this.src='Images/Owl/owl_off_branch.jpeg'" onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" />
           <div>Owl</div>
         </div>
-        <div class="animal-option" data-difficulty="adaptive">
-          <img 
-            src="Images/Monkey/monkey_before_swing.jpeg" 
-            alt="Monkey" 
-            id="monkeyImg" 
-            onmouseover="this.src='Images/Monkey/monkey_after_swing.jpeg'" 
-            onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" 
-          />
+        <div class="animal-option" data-difficulty="adaptive" style="scroll-snap-align: center;">
+          <img src="Images/Monkey/monkey_before_swing.jpeg" alt="Monkey" id="monkeyImg" onmouseover="this.src='Images/Monkey/monkey_after_swing.jpeg'" onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" />
           <div>Monkey</div>
         </div>
       </div>
@@ -327,6 +355,7 @@
     <div class="form-group">
       <button id="soundToggleBtn" class="sound-toggle" onclick="toggleSound()">Play Sound?</button>
       <img id="soundIcon" src="speaker_white.jpeg" alt="Sound Icon" style="display: none; margin-left: 10px; height: 30px; vertical-align: middle;" />
+      <button id="lightsToggleBtn" class="sound-toggle" onclick="toggleLights()">Lights Off?</button>
     </div>
     <button onclick="startGame()">Go!</button>
   </div>
@@ -338,12 +367,17 @@
 
   <div id="test">
     <h2>Task <span id="taskNum">1</span></h2>
-    <div id="wave-container" class="animal-row"></div>
-    <div id="buttons" style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
-      <button onclick="handleResponse('P')">P</button>
-      <button onclick="handleResponse('Q')">Q</button>
+    <div style="display: flex; align-items: stretch; justify-content: center; height: 300px;">
+      <div style="flex-shrink: 0; display: flex; align-items: center;">
+        <button onclick="handleResponse('P')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">P</button>
+      </div>
+      <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.95); border-radius: 10px;"></div>
+      <div style="flex-shrink: 0; display: flex; align-items: center;">
+        <button onclick="handleResponse('Q')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">Q</button>
+      </div>
     </div>
     <p id="score" style="color: #FFD700; font-size: 2em; text-shadow: 2px 2px 5px #000;">Score: 0</p>
+    <p id="responseCountdown" style="color: white; font-size: 1.5em; margin-top: 10px; text-shadow: 1px 1px 3px #000;"></p>
   </div>
 
   <div id="gameOver">
@@ -354,11 +388,21 @@
   </div>  
 
   <script>
+    let responseTimeout;
+    let backgroundCycleInterval = null;
+    let currentBackgroundIndex = 0;
+    const backgrounds = [
+      'Images/Background_1.jpeg',
+      'Images/Background_2.jpeg',
+      'Images/Background_3.jpeg'
+    ];
     window.correctRight = 0;
     window.incorrectRight = 0;
     window.correctLeft = 0;
     window.incorrectLeft = 0;
     window.missed = 0;
+    window.noResponseRight = 0;
+    window.noResponseLeft = 0;
     const beepAudio = new Audio('beep.wav');
     let selections = {};
     let selectedDifficulty = null;
@@ -400,19 +444,26 @@
     function startCountdown() {
       let count = 3;
       const el = document.getElementById('countdownTimer');
+      document.getElementById('countdown').style.display = 'block';
+      el.textContent = count;
+
       const interval = setInterval(() => {
-        el.textContent = count--;
+        count--;
+        if (count >= 0) {
+          el.textContent = count;
+        }
         if (count < 0) {
           clearInterval(interval);
           document.getElementById('countdown').style.display = 'none';
           document.getElementById('test').style.display = 'block';
           runTask();
         }
-      }, 600);
+      }, 1000); // Show each number for exactly 1 second
     }
 
     function runTask() {
-      if (currentTry >= tries) {
+  window.responseGiven = false;
+    if (currentTry >= tries) {
         if (selections.soundOn) {
           beepAudio.pause();
           beepAudio.currentTime = 0;
@@ -425,6 +476,17 @@
       const correctLeft = window.correctLeft || 0;
       const incorrectLeft = window.incorrectLeft || 0;
       const missed = window.missed || 0;
+
+      let Hit = window.correctRight || 0;
+      let Miss = window.incorrectRight || 0;
+      let NR1 = window.noResponseRight || 0;
+
+      let CR = window.incorrectLeft || 0;
+      let FA = window.correctLeft || 0;
+      let NR2 = window.noResponseLeft || 0;
+
+      let FracHit = Hit / (Hit + Miss + NR1);
+      let FracCR = CR / (CR + FA + NR2);
 
       function norminv(p) {
         if (p <= 0) p = 0.0001;
@@ -443,17 +505,14 @@
         return z;
       }
 
-      let fractHit = 0, fractCR = 0;
-      const totalRight = correctRight + incorrectRight + missed / 2;
-      const totalLeft = correctLeft + incorrectLeft + missed / 2;
-      if (totalRight !== 0) fractHit = correctRight / totalRight;
-      if (totalLeft !== 0) fractCR = incorrectLeft / totalLeft;
-
-      const dp1 = norminv(fractHit);
-      const dp2 = norminv(fractCR);
+      const dp1 = norminv(FracHit);
+      const dp2 = norminv(FracCR);
       const ResultScore = (dp1 - dp2).toFixed(3);
       
+      const existingInterpretations = document.querySelectorAll('#gameOver p.interpretation');
+      existingInterpretations.forEach(p => p.remove());
       const interpretation = document.createElement('p');
+      interpretation.classList.add('interpretation');
       interpretation.style.color = 'white';
       interpretation.style.fontSize = '1.5em';
       interpretation.style.marginTop = '10px';
@@ -510,9 +569,54 @@
 
       window.correctAnswer = direction === 'Forward' ? 'Q' : 'P';
       currentTry++;
+      
+      window.responseGiven = false;
+      
+      // Calculate total animation time for the last animal
+      const lastAnimalDelay = (5 - 1) * 0.5; // 5 animals, 0.5s staggered delay
+      const lastAnimalDuration = 2 + (5 - 1) * 0.3; // base duration + step
+      const totalAnimTime = (lastAnimalDelay + lastAnimalDuration) * 1000;
+
+      // Start countdown only after animals finish moving
+      document.getElementById('responseCountdown').textContent = '';
+      setTimeout(() => {
+        if (!window.responseGiven) {
+          console.log('No response after animations. Showing visual countdown...');
+          let countdownValue = 3;
+          const countdownEl = document.getElementById('responseCountdown');
+          countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
+ 
+          const visualCountdown = setInterval(() => {
+            countdownValue--;
+            if (window.responseGiven) {
+              clearInterval(visualCountdown);
+              countdownEl.textContent = '';
+              return;
+            }
+            if (countdownValue >= 0) {
+              countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
+            }
+            if (countdownValue < 0) {
+              clearInterval(visualCountdown);
+              countdownEl.textContent = '';
+              if (!window.responseGiven) {
+                if (direction === 'Forward') {
+                  window.noResponseRight++;
+                } else {
+                  window.noResponseLeft++;
+                }
+                document.getElementById('score').textContent = `Score: ${score}`;
+                console.log("No response after countdown — counted as miss.");
+                runTask();
+              }
+            }
+          }, 1000);
+        }
+      }, totalAnimTime);
     }
 
     function handleResponse(key) {
+      document.getElementById('responseCountdown').textContent = '';
       console.log('User Pressed:', key);
       console.log('Correct Answer:', window.correctAnswer);
 
@@ -525,6 +629,7 @@
       if (key.toUpperCase() === 'Q') window.incorrectRight++;
       else if (key.toUpperCase() === 'P') window.incorrectLeft++;
       console.log('Incorrect.');
+      clearTimeout(responseTimeout);
     }
 
       document.getElementById('score').textContent = `Score: ${score}`;
@@ -532,6 +637,8 @@
         beepAudio.pause();
         beepAudio.currentTime = 0;
       }
+      window.responseGiven = true;
+      clearTimeout(responseTimeout);
       runTask();
     }
 
@@ -556,6 +663,28 @@
       alert("Feedback submitted! Thank you.");
       // Here you can collect form data and send it to a server or database.
     }
+  function toggleLights() {
+  const btn = document.getElementById('lightsToggleBtn');
+  btn.classList.toggle('active');
+ 
+  if (btn.classList.contains('active')) {
+    btn.textContent = 'Lights On';
+ 
+    // Start background cycling
+    backgroundCycleInterval = setInterval(() => {
+      document.body.style.background = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg') no-repeat center center fixed`;
+      document.body.style.backgroundSize = 'cover';
+      currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
+    }, 500); // Change background every 500ms
+  } else {
+    btn.textContent = 'Lights Off?';
+    clearInterval(backgroundCycleInterval);
+    backgroundCycleInterval = null;
+    currentBackgroundIndex = 0;
+    document.body.style.background = "url('Images/Background.jpeg') no-repeat center center fixed";
+    document.body.style.backgroundSize = 'cover';
+  }
+}
   </script>
   <div class="container" id="feedbackForm" style="display:none;">
     <h2 style="text-align:center; color:white;">Feedback Form</h2>
