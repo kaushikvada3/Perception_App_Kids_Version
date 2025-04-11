@@ -147,7 +147,7 @@
     }
     #wave-container {
       position: relative;
-      height: 300px;
+      height: 400px; /* Increased from 300px to 400px */
       border: 2px solid #fff;
       margin: 20px;
       background-color: rgba(255, 255, 255,0.85); /* 95% white translucent */
@@ -179,7 +179,7 @@
     }
     .animal-row {
       position: relative;
-      height: 300px;
+      height: 400px; /* Increased from 300px to 400px */
       overflow: hidden;
     }
     .moving-animal {
@@ -275,6 +275,74 @@
       color: #fff;
       border-color: #28a745;
     }
+
+    /* Custom dropdown styling */
+    #difficultySelect {
+      width: 100%;
+      padding: 10px;
+      font-size: 1.2em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background-color: rgba(255, 215, 0, 0.8); /* Gold background */
+      color: #000; /* Black text */
+      border: 2px solid #fff; /* White border */
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    #difficultySelect:hover {
+      background-color: rgba(255, 223, 0, 0.9); /* Slightly brighter gold */
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+      transform: scale(1.05);
+    }
+
+    #difficultySelect:focus {
+      outline: none;
+      border-color: #FFD700; /* Gold border on focus */
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.9);
+    }
+
+    #difficultySelect option {
+      background-color: rgba(255, 215, 0, 0.8); /* Gold background for options */
+      color: #000; /* Black text */
+      font-size: 1.1em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    /* Custom styling for selected animal display */
+    #selectedAnimalDisplay {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 10px;
+      background-color: rgba(255, 215, 0, 0.8); /* Gold background */
+      border: 2px solid #fff; /* White border */
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    #selectedAnimalDisplay:hover {
+      background-color: rgba(255, 223, 0, 0.9); /* Slightly brighter gold */
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+      transform: scale(1.05);
+    }
+
+    #selectedAnimalImage {
+      width: 50px;
+      height: 50px;
+      border-radius: 5px;
+      margin-right: 10px;
+      border: 2px solid #FFD700; /* Gold border */
+    }
+
+    #selectedAnimalName {
+      font-size: 1.2em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      color: #000; /* Black text */
+    }
   </style>
   <style>
     /* .flashing-lights {
@@ -325,24 +393,18 @@
       <span id="numTriesValue">5</span>
     </div>
     <div class="form-group">
-      <label>Choose Your Animal (Difficulty):</label>
-      <div class="animal-options" id="animalList" style="overflow-x: scroll; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
-        <div class="animal-option" data-difficulty="easy" style="scroll-snap-align: center;">
-          <img src="Images/Turtle/turtle.jpeg" alt="Turtle" id="turtleImg" onmouseover="this.src='Images/Turtle/turtle_celebrate.jpeg'" onmouseout="this.src='Images/Turtle/turtle.jpeg'" />
-          <div>Turtle</div>
-        </div>
-        <div class="animal-option" data-difficulty="medium" style="scroll-snap-align: center;">
-          <img src="Images/Cat/cat.jpeg" alt="Cat" id="catImg" onmouseover="this.src='Images/Cat/cat_jumping.jpeg'" onmouseout="this.src='Images/Cat/cat.jpeg'" />
-          <div>Cat</div>
-        </div>
-        <div class="animal-option" data-difficulty="hard" style="scroll-snap-align: center;">
-          <img src="Images/Owl/owl_on_branch.jpeg" alt="Owl" id="owlImg" onmouseover="this.src='Images/Owl/owl_off_branch.jpeg'" onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" />
-          <div>Owl</div>
-        </div>
-        <div class="animal-option" data-difficulty="adaptive" style="scroll-snap-align: center;">
-          <img src="Images/Monkey/monkey_before_swing.jpeg" alt="Monkey" id="monkeyImg" onmouseover="this.src='Images/Monkey/monkey_after_swing.jpeg'" onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" />
-          <div>Monkey</div>
-        </div>
+      <label for="difficultySelect">Difficulty:</label>
+      <select id="difficultySelect" onchange="openAnimalModal()">
+        <option value="" disabled selected>Select Difficulty</option>
+        <option value="easy">🌟 Easy</option>
+        <option value="medium">🌟🌟 Medium</option>
+        <option value="hard">🌟🌟🌟 Hard</option>
+        <option value="veryDifficult">🌟🌟🌟🌟 Very Difficult</option>
+        <option value="adaptive">🌟🌟🌟🌟🌟 Adaptive</option>
+      </select>
+      <div id="selectedAnimalDisplay" style="margin-top: 10px; display: none;" onclick="openAnimalModal()">
+        <img id="selectedAnimalImage" src="" alt="Selected Animal" />
+        <span id="selectedAnimalName"></span>
       </div>
     </div>
     <div class="form-group">
@@ -363,6 +425,30 @@
     <button onclick="startGame()">Go!</button>
   </div>
 
+  <!-- Modal for animal selection -->
+  <div id="animalModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; z-index: 1000;">
+    <h3 style="color: white; text-align: center;">Select an Animal</h3>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 20px;">
+      <div class="animal-option" onclick="selectAnimal('Turtle', 'Images/Turtle/turtle.jpeg')">
+        <img src="Images/Turtle/turtle.jpeg" alt="Turtle" style="width: 100px; height: 100px; border-radius: 10px;" />
+        <div style="text-align: center; color: white;">Turtle</div>
+      </div>
+      <div class="animal-option" onclick="selectAnimal('Cat', 'Images/Cat/cat.jpeg')">
+        <img src="Images/Cat/cat.jpeg" alt="Cat" style="width: 100px; height: 100px; border-radius: 10px;" />
+        <div style="text-align: center; color: white;">Cat</div>
+      </div>
+      <div class="animal-option" onclick="selectAnimal('Owl', 'Images/Owl/owl_on_branch.jpeg')">
+        <img src="Images/Owl/owl_on_branch.jpeg" alt="Owl" style="width: 100px; height: 100px; border-radius: 10px;" />
+        <div style="text-align: center; color: white;">Owl</div>
+      </div>
+      <div class="animal-option" onclick="selectAnimal('Monkey', 'Images/Monkey/monkey_before_swing.jpeg')">
+        <img src="Images/Monkey/monkey_before_swing.jpeg" alt="Monkey" style="width: 100px; height: 100px; border-radius: 10px;" />
+        <div style="text-align: center; color: white;">Monkey</div>
+      </div>
+    </div>
+    <button onclick="closeAnimalModal()" style="margin-top: 20px; display: block; margin-left: auto; margin-right: auto; background-color: #ffcc00; color: black; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+  </div>
+
   <div id="countdown">
     <h2>Get Ready...</h2>
     <p id="countdownTimer">3</p>
@@ -370,12 +456,12 @@
 
   <div id="test">
     <h2>Task <span id="taskNum">1</span></h2>
-    <div style="display: flex; align-items: stretch; justify-content: center; height: 300px;">
-      <div style="flex-shrink: 0; display: flex; align-items: center;">
+    <div style="display: flex; align-items: stretch; justify-content: center; height: 400px;"> <!-- Ensure buttons stretch to match height -->
+      <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
         <button onclick="handleResponse('P')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">P</button>
       </div>
       <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.95); border-radius: 10px;"></div>
-      <div style="flex-shrink: 0; display: flex; align-items: center;">
+      <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
         <button onclick="handleResponse('Q')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">Q</button>
       </div>
     </div>
@@ -412,6 +498,34 @@
     let selectedDifficulty = null;
     let tries = 5, score = 0, currentTry = 0;
 
+    let currentDifficulty = 'medium'; // Start at medium difficulty
+    let performanceTracker = []; // Track recent performance (correct/wrong)
+
+    // Map difficulty levels to their order
+    const difficultyLevels = ['easy', 'medium', 'hard', 'veryDifficult'];
+
+    // Function to adjust difficulty based on performance
+    function adjustDifficulty() {
+      const lastTwo = performanceTracker.slice(-2); // Get the last two responses
+      if (lastTwo.length < 2) return; // Wait until we have at least two responses
+
+      if (lastTwo.every(response => response === 'correct')) {
+        // Increase difficulty if both responses are correct
+        const currentIndex = difficultyLevels.indexOf(currentDifficulty);
+        if (currentIndex < difficultyLevels.length - 1) {
+          currentDifficulty = difficultyLevels[currentIndex + 1];
+          console.log('Difficulty increased to:', currentDifficulty);
+        }
+      } else if (lastTwo.every(response => response === 'wrong')) {
+        // Decrease difficulty if both responses are wrong/missed
+        const currentIndex = difficultyLevels.indexOf(currentDifficulty);
+        if (currentIndex > 0) {
+          currentDifficulty = difficultyLevels[currentIndex - 1];
+          console.log('Difficulty decreased to:', currentDifficulty);
+        }
+      }
+    }
+
     // Link sliders to values
     ['numTries', 'stimDuration', 'outcomeDuration'].forEach(id => {
       const input = document.getElementById(id);
@@ -427,17 +541,34 @@
       });
     });
 
+    let lightsEnabled = false; // Track if lights are enabled
+
+    function toggleLights() {
+      const btn = document.getElementById('lightsToggleBtn');
+      btn.classList.toggle('active');
+
+      if (btn.classList.contains('active')) {
+        btn.textContent = 'Lights On';
+        lightsEnabled = true; // Enable lights, but only activate during the task
+      } else {
+        btn.textContent = 'Lights Off?';
+        lightsEnabled = false;
+      }
+    }
+
     function startGame() {
-      if (!selectedDifficulty) {
-        alert("Please select an animal difficulty.");
+      const difficulty = document.getElementById('difficultySelect').value;
+      if (!difficulty || !animalMap[difficulty]) {
+        alert('Please select a difficulty and assign an animal.');
         return;
       }
+      console.log('Starting game with difficulty:', difficulty, 'and animal:', animalMap[difficulty]);
       selections = {
         numTries: +document.getElementById('numTries').value,
         stimDuration: +document.getElementById('stimDuration').value,
         outcomeDuration: +document.getElementById('outcomeDuration').value,
         soundOn: document.getElementById('soundToggleBtn').classList.contains('active'),
-        difficulty: selectedDifficulty
+        difficulty: difficulty
       };
       tries = selections.numTries;
       document.getElementById('home').style.display = 'none';
@@ -465,79 +596,97 @@
       }, 1000); // Show each number for exactly 1 second
     }
 
+    let lastDirections = []; // Track the history of directions
+
+    function getNextDirection() {
+      const maxRepeats = 3; // Maximum allowed consecutive repeats
+      const newDirection = Math.random() > 0.5 ? 'Forward' : 'Backward';
+
+      // Check if the new direction would exceed the allowed repeats
+      if (
+        lastDirections.length >= maxRepeats &&
+        lastDirections.slice(-maxRepeats).every(dir => dir === newDirection)
+      ) {
+        // Force the opposite direction
+        return newDirection === 'Forward' ? 'Backward' : 'Forward';
+      }
+
+      return newDirection;
+    }
+
     function runTask() {
-  window.responseGiven = false;
-    if (currentTry >= tries) {
+      window.responseGiven = false;
+      if (currentTry >= tries) {
         if (selections.soundOn) {
           beepAudio.pause();
           beepAudio.currentTime = 0;
         }
         document.getElementById('test').style.display = 'none';
-      document.getElementById('gameOver').style.display = 'block';
-      
-      const correctRight = window.correctRight || 0;
-      const incorrectRight = window.incorrectRight || 0;
-      const correctLeft = window.correctLeft || 0;
-      const incorrectLeft = window.incorrectLeft || 0;
-      const missed = window.missed || 0;
+        document.getElementById('gameOver').style.display = 'block';
+        
+        const correctRight = window.correctRight || 0;
+        const incorrectRight = window.incorrectRight || 0;
+        const correctLeft = window.correctLeft || 0;
+        const incorrectLeft = window.incorrectLeft || 0;
+        const missed = window.missed || 0;
 
-      let Hit = window.correctRight || 0;
-      let Miss = window.incorrectRight || 0;
-      let NR1 = window.noResponseRight || 0;
+        let Hit = window.correctRight || 0;
+        let Miss = window.incorrectRight || 0;
+        let NR1 = window.noResponseRight || 0;
 
-      let CR = window.incorrectLeft || 0;
-      let FA = window.correctLeft || 0;
-      let NR2 = window.noResponseLeft || 0;
+        let CR = window.incorrectLeft || 0;
+        let FA = window.correctLeft || 0;
+        let NR2 = window.noResponseLeft || 0;
 
-      let FracHit = Hit / (Hit + Miss + NR1);
-      let FracCR = CR / (CR + FA + NR2);
+        let FracHit = Hit / (Hit + Miss + NR1);
+        let FracCR = CR / (CR + FA + NR2);
 
-      function norminv(p) {
-        if (p <= 0) p = 0.0001;
-        if (p >= 1) p = 0.9999;
+        function norminv(p) {
+          if (p <= 0) p = 0.0001;
+          if (p >= 1) p = 0.9999;
 
-        const a1 = -39.69683028665376;
-        const a2 = 220.9460984245205;
-        const a3 = -275.9285104469687;
-        const a4 = 138.357751867269;
-        const a5 = -30.66479806614716;
-        const a6 = 2.506628277459239;
+          const a1 = -39.69683028665376;
+          const a2 = 220.9460984245205;
+          const a3 = -275.9285104469687;
+          const a4 = 138.357751867269;
+          const a5 = -30.66479806614716;
+          const a6 = 2.506628277459239;
 
-        const t = 1.0 / (1.0 + 0.2316419 * p);
-        const z = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-p * p / 2.0);
+          const t = 1.0 / (1.0 + 0.2316419 * p);
+          const z = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-p * p / 2.0);
 
-        return z;
-      }
+          return z;
+        }
 
-      const dp1 = norminv(FracHit);
-      const dp2 = norminv(FracCR);
-      const ResultScore = (dp1 - dp2).toFixed(3);
-      
-      const existingInterpretations = document.querySelectorAll('#gameOver p.interpretation');
-      existingInterpretations.forEach(p => p.remove());
-      const interpretation = document.createElement('p');
-      interpretation.classList.add('interpretation');
-      interpretation.style.color = 'white';
-      interpretation.style.fontSize = '1.5em';
-      interpretation.style.marginTop = '10px';
-      interpretation.style.textShadow = '2px 2px 5px #000';
-      
-      if (ResultScore > 1.5) {
-        interpretation.textContent = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
-      } else if (ResultScore > 0.5) {
-        interpretation.textContent = 'Moderate sensory recognition. Performance is above average.';
-      } else if (ResultScore > 0) {
-        interpretation.textContent = 'Slightly better than guessing. May suggest some perceptual difficulty.';
-      } else if (ResultScore == 0) {
-        interpretation.textContent = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
-      } else {
-        interpretation.textContent = 'Performance is below chance. May suggest difficulty with sensory perception.';
-      }
-      
-      document.getElementById('gameOver').appendChild(interpretation);
+        const dp1 = norminv(FracHit);
+        const dp2 = norminv(FracCR);
+        const ResultScore = (dp1 - dp2).toFixed(3);
+        
+        const existingInterpretations = document.querySelectorAll('#gameOver p.interpretation');
+        existingInterpretations.forEach(p => p.remove());
+        const interpretation = document.createElement('p');
+        interpretation.classList.add('interpretation');
+        interpretation.style.color = 'white';
+        interpretation.style.fontSize = '1.5em';
+        interpretation.style.marginTop = '10px';
+        interpretation.style.textShadow = '2px 2px 5px #000';
+        
+        if (ResultScore > 1.5) {
+          interpretation.textContent = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
+        } else if (ResultScore > 0.5) {
+          interpretation.textContent = 'Moderate sensory recognition. Performance is above average.';
+        } else if (ResultScore > 0) {
+          interpretation.textContent = 'Slightly better than guessing. May suggest some perceptual difficulty.';
+        } else if (ResultScore == 0) {
+          interpretation.textContent = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
+        } else {
+          interpretation.textContent = 'Performance is below chance. May suggest difficulty with sensory perception.';
+        }
+        
+        document.getElementById('gameOver').appendChild(interpretation);
 
-      document.getElementById('finalScore').textContent = `Score: ${score} / ${tries} | Metric: ${ResultScore}`;
-      return;
+        document.getElementById('finalScore').textContent = `Score: ${score} / ${tries} | Metric: ${ResultScore}`;
+        return;
       }
 
       document.getElementById('taskNum').textContent = currentTry + 1;
@@ -548,79 +697,181 @@
       }
 
       const waveContainer = document.getElementById('wave-container');
-      waveContainer.innerHTML = ''; // clear previous animals
-      const difficulty = selections.difficulty;
-      const direction = Math.random() > 0.5 ? 'Forward' : 'Backward';
+      waveContainer.innerHTML = ''; // Clear previous animals
+
+      const direction = getNextDirection(); // Get the next direction
+      lastDirections.push(direction); // Add to history
+      if (lastDirections.length > 3) {
+        lastDirections.shift(); // Keep history size manageable
+      }
+
       const animClass = {
         easy: direction === 'Forward' ? 'easyMoveMultiple' : 'easyMoveMultipleReverse',
         medium: direction === 'Forward' ? 'mediumMoveMultiple' : 'mediumMoveMultipleReverse',
         hard: direction === 'Forward' ? 'hardMoveMultiple' : 'hardMoveMultipleReverse',
-        adaptive: direction === 'Forward' ? 'veryHardMoveMultiple' : 'veryHardMoveMultipleReverse'
-      }[difficulty];
+        veryDifficult: direction === 'Forward' ? 'veryHardMoveMultiple' : 'veryHardMoveMultipleReverse'
+      }[currentDifficulty];
+
+      const animalImage = document.getElementById('selectedAnimalImage').src;
+
+      // Determine rotation angle based on difficulty
+      let rotationAngle = 0;
+      if (currentDifficulty === 'medium') {
+        rotationAngle = Math.random() * (30 - 15) + 15; // Random angle between 15° and 30°
+      } else if (currentDifficulty === 'hard') {
+        rotationAngle = Math.random() * (60 - 45) + 45; // Random angle between 45° and 60°
+      } else if (currentDifficulty === 'veryDifficult') {
+        rotationAngle = Math.random() * (90 - 75) + 75; // Random angle between 75° and 90°
+      } else if (currentDifficulty === 'adaptive') {
+        // Adaptive rotation logic
+        const baseline = 60; // Start at 60°
+        const maxRotation = 120; // Maximum rotation angle
+        const minRotation = 30; // Minimum rotation angle
+        const performanceFactor = (score / currentTry) || 0; // Performance ratio
+        rotationAngle = Math.min(maxRotation, Math.max(minRotation, baseline + (performanceFactor - 0.5) * 60));
+      }
 
       for (let i = 0; i < 5; i++) {
-      const img = document.createElement('img');
-      const selectedAnimal = document.querySelector('.animal-option.selected img');
-      const baseSrc = selectedAnimal.getAttribute('onmouseout').match(/'([^']+)'/)[1];
-      img.src = baseSrc;
+        const img = document.createElement('img');
+        img.src = animalImage; // Use the selected animal's image
         img.className = 'moving-animal';
         img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
         img.style.left = '-150px';
         img.style.animation = `${animClass} ${2 + i * 0.3}s linear ${i * 0.5}s forwards`;
         img.style.zIndex = 5 - i; // Ensure layering flows naturally
+        img.style.transform = `rotate(${rotationAngle}deg)`; // Apply rotation
         waveContainer.appendChild(img);
       }
 
       window.correctAnswer = direction === 'Forward' ? 'Q' : 'P';
       currentTry++;
-      
+
       window.responseGiven = false;
-      
+
       // Calculate total animation time for the last animal
       const lastAnimalDelay = (5 - 1) * 0.5; // 5 animals, 0.5s staggered delay
       const lastAnimalDuration = 2 + (5 - 1) * 0.3; // base duration + step
       const totalAnimTime = (lastAnimalDelay + lastAnimalDuration) * 1000;
 
+      // Trigger sound and lights at 60% of the total stimulus duration
+      const triggerTime = totalAnimTime * 0.6;
+      setTimeout(() => {
+        if (selections.soundOn) {
+          beepAudio.pause();
+          beepAudio.currentTime = 0;
+          beepAudio.play(); // Trigger sound
+        }
+        if (lightsEnabled) {
+          flashLights(); // Trigger lights only if enabled
+        }
+      }, triggerTime);
+
       // Start countdown only after animals finish moving
       document.getElementById('responseCountdown').textContent = '';
       setTimeout(() => {
-        if (!window.responseGiven) {
-          console.log('No response after animations. Showing visual countdown...');
-          let countdownValue = 3;
-          const countdownEl = document.getElementById('responseCountdown');
-          countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
+        if (window.responseGiven) return; // Ensure countdown doesn't start if a response is already given
 
-          if (visualCountdownInterval) {
+        let countdownValue = 3;
+        const countdownEl = document.getElementById('responseCountdown');
+        countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
+
+        if (visualCountdownInterval) {
+          clearInterval(visualCountdownInterval);
+        }
+
+        visualCountdownInterval = setInterval(() => {
+          if (window.responseGiven) {
             clearInterval(visualCountdownInterval);
+            countdownEl.textContent = '';
+            return;
           }
 
-          visualCountdownInterval = setInterval(() => {
-            countdownValue--;
-            if (window.responseGiven) {
-              clearInterval(visualCountdownInterval);
-              countdownEl.textContent = '';
-              return;
+          countdownValue--;
+          if (countdownValue >= 0) {
+            countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
+          }
+
+          if (countdownValue < 0) {
+            clearInterval(visualCountdownInterval);
+            countdownEl.textContent = '';
+            if (!window.responseGiven) {
+              handleMissedResponse();
             }
-            if (countdownValue >= 0) {
-              countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
-            }
-            if (countdownValue < 0) {
-              clearInterval(visualCountdownInterval);
-              countdownEl.textContent = '';
-              if (!window.responseGiven) {
-                if (direction === 'Forward') {
-                  window.noResponseRight++;
-                } else {
-                  window.noResponseLeft++;
-                }
-                document.getElementById('score').textContent = `Score: ${score}`;
-                console.log("No response after countdown — counted as miss.");
-                runTask();
-              }
-            }
-          }, 1000);
+          }
+        }, 1000);
+      }, totalAnimTime); // Delay countdown until all animations are complete
+    }
+
+    const correctImages = [
+      'Feedback Images/image1.jpg',
+      'Feedback Images/image2.jpg',
+      'Feedback Images/image3.jpg',
+      'Feedback Images/image4.jpg',
+      'Feedback Images/image5.jpg',
+      'Feedback Images/image6.jpg',
+      'Feedback Images/image7.jpg',
+      'Feedback Images/image8.jpg'
+    ];
+    const wrongImage = 'Feedback Images/wrong.png';
+
+    function showFeedbackImage(isCorrect) {
+      const feedbackContainer = document.createElement('div');
+      feedbackContainer.id = 'feedbackContainer';
+      feedbackContainer.style.position = 'absolute';
+      feedbackContainer.style.top = '50%';
+      feedbackContainer.style.left = '50%';
+      feedbackContainer.style.transform = 'translate(-50%, -50%)';
+      feedbackContainer.style.zIndex = '1000';
+      feedbackContainer.style.display = 'flex';
+      feedbackContainer.style.justifyContent = 'center';
+      feedbackContainer.style.alignItems = 'center';
+      feedbackContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      feedbackContainer.style.borderRadius = '12px';
+      feedbackContainer.style.padding = '20px';
+
+      const feedbackImage = document.createElement('img');
+      feedbackImage.src = isCorrect
+        ? correctImages[Math.floor(Math.random() * correctImages.length)]
+        : wrongImage;
+      feedbackImage.style.maxWidth = '300px';
+      feedbackImage.style.maxHeight = '300px';
+      feedbackImage.style.borderRadius = '10px';
+      feedbackContainer.appendChild(feedbackImage);
+
+      document.body.appendChild(feedbackContainer);
+
+      // Disable inputs during feedback
+      disableInputs();
+
+      const outcomeDuration = +document.getElementById('outcomeDuration').value * 1000;
+
+      setTimeout(() => {
+        feedbackContainer.remove();
+        enableInputs();
+
+        if (!isCorrect) {
+          if (window.responseGiven) {
+            // Continue countdown if already started
+            return;
+          } else {
+            // Automatically proceed to the next trial
+            runTask();
+          }
+        } else {
+          // Automatically proceed to the next trial for correct answers
+          runTask();
         }
-      }, totalAnimTime);
+      }, outcomeDuration);
+    }
+
+    function disableInputs() {
+      document.querySelectorAll('button').forEach(button => button.disabled = true);
+      window.responseGiven = true; // Prevent further responses
+    }
+
+    function enableInputs() {
+      document.querySelectorAll('button').forEach(button => button.disabled = false);
+      window.responseGiven = false; // Allow responses again
     }
 
     function handleResponse(key) {
@@ -629,26 +880,35 @@
       console.log('Correct Answer:', window.correctAnswer);
       clearInterval(visualCountdownInterval);
 
-    if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
-      score++;
-      if (key.toUpperCase() === 'Q') window.correctRight++;
-      else if (key.toUpperCase() === 'P') window.correctLeft++;
-      console.log('Correct! Score:', score);
-    } else {
-      if (key.toUpperCase() === 'Q') window.incorrectRight++;
-      else if (key.toUpperCase() === 'P') window.incorrectLeft++;
-      console.log('Incorrect.');
-      clearTimeout(responseTimeout);
-    }
+      if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
+        score++;
+        performanceTracker.push('correct'); // Track correct response
+        if (key.toUpperCase() === 'Q') window.correctRight++;
+        else if (key.toUpperCase() === 'P') window.correctLeft++;
+        console.log('Correct! Score:', score);
+        showFeedbackImage(true); // Show correct feedback
+      } else {
+        performanceTracker.push('wrong'); // Track wrong response
+        if (key.toUpperCase() === 'Q') window.incorrectRight++;
+        else if (key.toUpperCase() === 'P') window.incorrectLeft++;
+        console.log('Incorrect.');
+        showFeedbackImage(false); // Show incorrect feedback
+      }
 
+      adjustDifficulty(); // Adjust difficulty based on performance
       document.getElementById('score').textContent = `Score: ${score}`;
       if (selections.soundOn) {
         beepAudio.pause();
         beepAudio.currentTime = 0;
       }
-      window.responseGiven = true;
-      clearTimeout(responseTimeout);
-      runTask();
+    }
+
+    function handleMissedResponse() {
+      console.log("No response after countdown — counted as miss.");
+      window.missed++;
+      performanceTracker.push('wrong'); // Track missed response
+      adjustDifficulty(); // Adjust difficulty based on performance
+      showFeedbackImage(false); // Show feedback for missed response
     }
 
     function toggleSound() {
@@ -672,34 +932,80 @@
       alert("Feedback submitted! Thank you.");
       // Here you can collect form data and send it to a server or database.
     }
-  function toggleLights() {
-  const btn = document.getElementById('lightsToggleBtn');
-  btn.classList.toggle('active');
- 
-  if (btn.classList.contains('active')) {
-    btn.textContent = 'Lights On';
- 
-    // Start background cycling
-    backgroundCycleInterval = setInterval(() => {
-      document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'top left';
-      document.body.style.backgroundRepeat = 'no-repeat';
-      document.body.style.backgroundAttachment = 'fixed';
-      currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-    }, 500); // Change background every 500ms
-  } else {
-    btn.textContent = 'Lights Off?';
-    clearInterval(backgroundCycleInterval);
-    backgroundCycleInterval = null;
-    currentBackgroundIndex = 0;
-    document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'top left';
-    document.body.style.backgroundRepeat = 'no-repeat';
-    document.body.style.backgroundAttachment = 'fixed';
-  }
-}
+
+    // Function to flash lights
+    function flashLights() {
+      const body = document.body;
+      const originalBackground = body.style.backgroundImage;
+
+      let flashCount = 0;
+      const maxFlashes = 6; // Number of flashes
+      const flashInterval = setInterval(() => {
+        body.style.backgroundImage =
+          flashCount % 2 === 0
+            ? "url('Images/Background_2.jpeg')" // Flash background
+            : originalBackground; // Restore original background
+
+        flashCount++;
+        if (flashCount >= maxFlashes) {
+          clearInterval(flashInterval);
+          body.style.backgroundImage = originalBackground; // Ensure original background is restored
+        }
+      }, 200); // Flash every 200ms
+    }
+
+    // Global object to store animal-to-difficulty mapping
+    const animalMap = {};
+
+    // Open the animal selection modal
+    function openAnimalModal() {
+      const difficulty = document.getElementById('difficultySelect').value;
+      if (!difficulty) {
+        alert("Please select a difficulty first.");
+        return;
+      }
+
+      // Clear previous selection in the modal
+      document.querySelectorAll('.animal-option').forEach(option => option.classList.remove('selected'));
+
+      // Highlight the currently selected animal for the chosen difficulty, if any
+      const currentAnimal = animalMap[difficulty];
+      if (currentAnimal) {
+        document.querySelectorAll('.animal-option').forEach(option => {
+          const animalName = option.querySelector('div').textContent.trim();
+          if (animalName === currentAnimal) {
+            option.classList.add('selected');
+          }
+        });
+      }
+
+      document.getElementById('animalModal').style.display = 'block';
+    }
+
+    // Close the animal selection modal
+    function closeAnimalModal() {
+      document.getElementById('animalModal').style.display = 'none';
+    }
+
+    // Select an animal and map it to the chosen difficulty
+    function selectAnimal(animalName, animalImage) {
+      const difficulty = document.getElementById('difficultySelect').value;
+      if (!difficulty) return;
+
+      // Update the global mapping
+      animalMap[difficulty] = animalName;
+
+      // Display the selected animal next to the dropdown
+      const display = document.getElementById('selectedAnimalDisplay');
+      const img = document.getElementById('selectedAnimalImage');
+      const name = document.getElementById('selectedAnimalName');
+      img.src = animalImage;
+      name.textContent = animalName; // Only display the animal name
+      display.style.display = 'flex';
+
+      // Close the modal
+      closeAnimalModal();
+    }
   </script>
   <div class="container" id="feedbackForm" style="display:none;">
     <h2 style="text-align:center; color:white;">Feedback Form</h2>
