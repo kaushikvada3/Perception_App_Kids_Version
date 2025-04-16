@@ -458,11 +458,11 @@
     <h2>Task <span id="taskNum">1</span></h2>
     <div style="display: flex; align-items: stretch; justify-content: center; height: 400px;"> <!-- Ensure buttons stretch to match height -->
       <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-        <button onclick="handleResponse('P')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">P</button>
+        <button onclick="handleResponse('P')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">←</button>
       </div>
       <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.95); border-radius: 10px;"></div>
       <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-        <button onclick="handleResponse('Q')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">Q</button>
+        <button onclick="handleResponse('Q')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">→</button>
       </div>
     </div>
     <p id="score" style="color: #FFD700; font-size: 2em; text-shadow: 2px 2px 5px #000;">Score: 0</p>
@@ -500,9 +500,41 @@
 
     let currentDifficulty = 'medium'; // Start at medium difficulty
     let performanceTracker = []; // Track recent performance (correct/wrong)
-
+    
     // Map difficulty levels to their order
     const difficultyLevels = ['easy', 'medium', 'hard', 'veryDifficult'];
+
+    // Global difficulty configuration
+    const difficultyConfig = {
+      easy: { baseAngle: 0, adaptive: false },
+      medium: { baseAngle: 15, adaptive: false },
+      hard: { baseAngle: 30, adaptive: false },
+      veryDifficult: { baseAngle: 45, adaptive: false },
+      adaptive: { currentAngle: 0, adaptive: true, min: 0, max: 90 }
+    };
+
+    // Define rotation angles for each difficulty (legacy support)
+    const rotationAngles = {
+      easy: 0,
+      medium: 15,
+      hard: 30,
+      veryDifficult: 45,
+      adaptive: 0 // Starts at 0° for adaptive
+    };
+
+    let adaptiveAngle = 0; // Track the current adaptive angle
+
+    function adjustAdaptiveAngle(correct) {
+      if (selectedDifficulty !== 'adaptive') return; // Only adjust in adaptive mode
+
+      const adjustment = 10; // Angle adjustment step
+      if (correct) {
+        adaptiveAngle = Math.min(adaptiveAngle + adjustment, 75); // Cap at 75°
+      } else {
+        adaptiveAngle = Math.max(adaptiveAngle - adjustment, 0); // Floor at 0°
+      }
+      rotationAngles.adaptive = adaptiveAngle; // Update the adaptive angle
+    }
 
     // Function to adjust difficulty based on performance
     function adjustDifficulty() {
@@ -705,41 +737,44 @@
         lastDirections.shift(); // Keep history size manageable
       }
 
-      const animClass = {
-        easy: direction === 'Forward' ? 'easyMoveMultiple' : 'easyMoveMultipleReverse',
-        medium: direction === 'Forward' ? 'mediumMoveMultiple' : 'mediumMoveMultipleReverse',
-        hard: direction === 'Forward' ? 'hardMoveMultiple' : 'hardMoveMultipleReverse',
-        veryDifficult: direction === 'Forward' ? 'veryHardMoveMultiple' : 'veryHardMoveMultipleReverse'
-      }[currentDifficulty];
-
       const animalImage = document.getElementById('selectedAnimalImage').src;
-
-      // Determine rotation angle based on difficulty
-      let rotationAngle = 0;
-      if (currentDifficulty === 'medium') {
-        rotationAngle = Math.random() * (30 - 15) + 15; // Random angle between 15° and 30°
-      } else if (currentDifficulty === 'hard') {
-        rotationAngle = Math.random() * (60 - 45) + 45; // Random angle between 45° and 60°
-      } else if (currentDifficulty === 'veryDifficult') {
-        rotationAngle = Math.random() * (90 - 75) + 75; // Random angle between 75° and 90°
-      } else if (currentDifficulty === 'adaptive') {
-        // Adaptive rotation logic
-        const baseline = 60; // Start at 60°
-        const maxRotation = 120; // Maximum rotation angle
-        const minRotation = 30; // Minimum rotation angle
-        const performanceFactor = (score / currentTry) || 0; // Performance ratio
-        rotationAngle = Math.min(maxRotation, Math.max(minRotation, baseline + (performanceFactor - 0.5) * 60));
-      }
 
       for (let i = 0; i < 5; i++) {
         const img = document.createElement('img');
         img.src = animalImage; // Use the selected animal's image
         img.className = 'moving-animal';
-        img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
+        img.style.top = `${Math.floor(Math.random() * 200) + 50}px`; // Random vertical position
         img.style.left = '-150px';
-        img.style.animation = `${animClass} ${2 + i * 0.3}s linear ${i * 0.5}s forwards`;
+
+      // Determine rotation angle based on difficulty
+      let rotationAngle = 0;
+      if (!difficultyConfig[currentDifficulty].adaptive) {
+        if (currentDifficulty === 'easy') {
+          rotationAngle = 0;
+        } else {
+          rotationAngle = difficultyConfig[currentDifficulty].baseAngle;
+        }
+      } else {
+        const lastTwo = performanceTracker.slice(-2);
+        if (lastTwo.length === 2) {
+          if (lastTwo.every(p => p === 'correct')) {
+            difficultyConfig.adaptive.currentAngle = Math.min(
+              difficultyConfig.adaptive.max,
+              difficultyConfig.adaptive.currentAngle + 10
+            );
+          } else if (lastTwo.every(p => p === 'wrong')) {
+            difficultyConfig.adaptive.currentAngle = Math.max(
+              difficultyConfig.adaptive.min,
+              difficultyConfig.adaptive.currentAngle - 10
+            );
+          }
+        }
+        rotationAngle = difficultyConfig.adaptive.currentAngle;
+      }
+      const animClass = direction === 'Forward' ? 'easyMoveMultiple' : 'easyMoveMultipleReverse';
+      img.style.transform = `rotate(${rotationAngle}deg)`;
+        img.style.animation = `${animClass} 3s linear ${i * 0.8}s forwards`; // Fixed speed (3s) and staggered delay (0.8s)
         img.style.zIndex = 5 - i; // Ensure layering flows naturally
-        img.style.transform = `rotate(${rotationAngle}deg)`; // Apply rotation
         waveContainer.appendChild(img);
       }
 
@@ -750,7 +785,7 @@
 
       // Calculate total animation time for the last animal
       const lastAnimalDelay = (5 - 1) * 0.5; // 5 animals, 0.5s staggered delay
-      const lastAnimalDuration = 2 + (5 - 1) * 0.3; // base duration + step
+      const lastAnimalDuration = 5; // Fixed duration for all animals
       const totalAnimTime = (lastAnimalDelay + lastAnimalDuration) * 1000;
 
       // Trigger sound and lights at 60% of the total stimulus duration
@@ -876,11 +911,12 @@
 
     function handleResponse(key) {
       document.getElementById('responseCountdown').textContent = '';
-      console.log('User Pressed:', key);
-      console.log('Correct Answer:', window.correctAnswer);
+      console.log('User Pressed:', key === 'P' ? '←' : '→'); // Replace "P" with "←" and "Q" with "→"
+      console.log('Correct Answer:', window.correctAnswer === 'P' ? '←' : '→'); // Replace "P" with "←" and "Q" with "→"
       clearInterval(visualCountdownInterval);
 
-      if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
+      const correct = key.toUpperCase() === window.correctAnswer.toUpperCase();
+      if (correct) {
         score++;
         performanceTracker.push('correct'); // Track correct response
         if (key.toUpperCase() === 'Q') window.correctRight++;
@@ -895,6 +931,7 @@
         showFeedbackImage(false); // Show incorrect feedback
       }
 
+      adjustAdaptiveAngle(correct); // Adjust adaptive angle if in adaptive mode
       adjustDifficulty(); // Adjust difficulty based on performance
       document.getElementById('score').textContent = `Score: ${score}`;
       if (selections.soundOn) {
