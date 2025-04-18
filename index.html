@@ -583,27 +583,25 @@
         document.getElementById('gameOver').style.display = 'block';
         displayResultsChart(); // Display results chart at the end
         
-        const correctRight = window.correctRight || 0;
-        const incorrectRight = window.incorrectRight || 0;
-        const correctLeft = window.correctLeft || 0;
-        const incorrectLeft = window.incorrectLeft || 0;
-        const missed = window.missed || 0;
+        const Hit = window.correctRight || 0;
+        const Miss = window.incorrectRight || 0;
+        const NR1 = window.noResponseRight || 0;
 
-        let Hit = window.correctRight || 0;
-        let Miss = window.incorrectRight || 0;
-        let NR1 = window.noResponseRight || 0;
-
-        let CR = window.incorrectLeft || 0;
-        let FA = window.correctLeft || 0;
-        let NR2 = window.noResponseLeft || 0;
+        const CR = window.incorrectLeft || 0;
+        const FA = window.correctLeft || 0;
+        const NR2 = window.noResponseLeft || 0;
 
         let FracHit = Hit / (Hit + Miss + NR1);
         let FracCR = CR / (CR + FA + NR2);
 
-        function norminv(p) {
-          if (p <= 0) p = 0.0001;
-          if (p >= 1) p = 0.9999;
+        // Prevent NaN by adjusting FracHit and FracCR
+        if (FracHit === 1) FracHit = 0.99;
+        else if (FracHit === 0) FracHit = 0.01;
 
+        if (FracCR === 0) FracCR = 0.01;
+        else if (FracCR === 1) FracCR = 0.99;
+
+        function norminv(p) {
           const a1 = -39.69683028665376;
           const a2 = 220.9460984245205;
           const a3 = -275.9285104469687;
@@ -611,16 +609,45 @@
           const a5 = -30.66479806614716;
           const a6 = 2.506628277459239;
 
-          const t = 1.0 / (1.0 + 0.2316419 * p);
-          const z = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-p * p / 2.0);
+          const b1 = -54.47609879822406;
+          const b2 = 161.5858368580409;
+          const b3 = -155.6989798598866;
+          const b4 = 66.80131188771972;
+          const b5 = -13.28068155288572;
 
-          return z;
+          const c1 = -0.007784894002430293;
+          const c2 = -0.3223964580411365;
+          const c3 = -2.400758277161838;
+          const c4 = -2.549732539343734;
+          const c5 = 4.374664141464968;
+          const c6 = 2.938163982698783;
+
+          const d1 = 0.007784695709041462;
+          const d2 = 0.3224671290700398;
+          const d3 = 2.445134137142996;
+          const d4 = 3.754408661907416;
+
+          const pLow = 0.02425;
+          const pHigh = 1 - pLow;
+
+          if (p < pLow) {
+            const q = Math.sqrt(-2 * Math.log(p));
+            return (((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+              ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+          } else if (p <= pHigh) {
+            const q = p - 0.5;
+            const r = q * q;
+            return (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q /
+              (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
+          } else {
+            const q = Math.sqrt(-2 * Math.log(1 - p));
+            return -(((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+              ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+          }
         }
 
-        const dp1 = norminv(FracHit);
-        const dp2 = norminv(FracCR);
-        const ResultScore = (dp1 - dp2).toFixed(3);
-        
+        const dprime1 = (norminv(FracHit) - norminv(FracCR)).toFixed(3);
+
         const existingInterpretations = document.querySelectorAll('#gameOver p.interpretation');
         existingInterpretations.forEach(p => p.remove());
         const interpretation = document.createElement('p');
@@ -629,22 +656,22 @@
         interpretation.style.fontSize = '1.5em';
         interpretation.style.marginTop = '10px';
         interpretation.style.textShadow = '2px 2px 5px #000';
-        
-        if (ResultScore > 1.5) {
+
+        if (dprime1 > 1.5) {
           interpretation.textContent = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
-        } else if (ResultScore > 0.5) {
+        } else if (dprime1 > 0.5) {
           interpretation.textContent = 'Moderate sensory recognition. Performance is above average.';
-        } else if (ResultScore > 0) {
+        } else if (dprime1 > 0) {
           interpretation.textContent = 'Slightly better than guessing. May suggest some perceptual difficulty.';
-        } else if (ResultScore == 0) {
+        } else if (dprime1 == 0) {
           interpretation.textContent = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
         } else {
           interpretation.textContent = 'Performance is below chance. May suggest difficulty with sensory perception.';
         }
-        
+
         document.getElementById('gameOver').appendChild(interpretation);
 
-        document.getElementById('finalScore').textContent = `Score: ${score} / ${tries} | Metric: ${ResultScore}`;
+        document.getElementById('finalScore').textContent = `Score: ${score} / ${tries} | Metric: ${dprime1}`;
         console.log("Distractor Log:", distractorLog); // Log distractor usage at the end
         return;
       }
