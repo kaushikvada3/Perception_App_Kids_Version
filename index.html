@@ -702,17 +702,18 @@
         veryDifficult: Math.random() * (90 - 75) + 75
       }[usedDifficulty];
 
-      // Map animal names to their correct filenames
+      // Use absolute paths based on your GitHub Pages URL
+      const basePath = 'https://kaushikvada3.github.io/Perception_App_Kids_Version//Images';
       const animalImageMap = {
-        turtle: 'Turtle/turtle.jpeg',
-        cat: 'Cat/cat.jpeg',
-        owl: 'Owl/owl_on_branch.jpeg',
-        monkey: 'Monkey/monkey_before_swing.jpeg'
+        turtle: `${basePath}/Turtle/turtle.jpeg`,
+        cat: `${basePath}/Cat/cat.jpeg`,
+        owl: `${basePath}/Owl/owl_on_branch.jpeg`,
+        monkey: `${basePath}/Monkey/monkey_before_swing.jpeg`
       };
 
       for (let i = 0; i < 5; i++) {
         const img = document.createElement('img');
-        img.src = `Images/${animalImageMap[selectedAnimal]}`; // Use the correct filename and path
+        img.src = animalImageMap[selectedAnimal]; // Use the absolute path
         img.className = 'moving-animal';
         img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
         img.style.left = '-150px';
