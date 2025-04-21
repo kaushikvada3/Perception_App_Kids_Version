@@ -704,15 +704,15 @@
 
       // Map animal names to their correct filenames
       const animalImageMap = {
-        turtle: 'turtle.jpeg',
-        cat: 'cat.jpeg',
-        owl: 'owl_on_branch.jpeg',
-        monkey: 'monkey_before_swing.jpeg'
+        turtle: 'Turtle/turtle.jpeg',
+        cat: 'Cat/cat.jpeg',
+        owl: 'Owl/owl_on_branch.jpeg',
+        monkey: 'Monkey/monkey_before_swing.jpeg'
       };
 
       for (let i = 0; i < 5; i++) {
         const img = document.createElement('img');
-        img.src = `Images/${selectedAnimal}/${animalImageMap[selectedAnimal]}`; // Use the correct filename
+        img.src = `Images/${animalImageMap[selectedAnimal]}`; // Use the correct filename and path
         img.className = 'moving-animal';
         img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
         img.style.left = '-150px';
