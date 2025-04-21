@@ -358,19 +358,19 @@
       <label>Choose Your Animal:</label>
       <div class="animal-options" id="animalList" style="overflow-x: scroll; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
         <div class="animal-option" data-animal="turtle" style="scroll-snap-align: center;">
-          <img src="Images/Turtle/turtle.jpeg" alt="Turtle" id="turtleImg" onmouseover="this.src='Images/Turtle/turtle_celebrate.jpeg'" onmouseout="this.src='Images/Turtle/turtle.jpeg'" />
+          <img src="Images/Turtle/turtle.jpeg" alt="Turtle" id="turtleImg" onmouseover="this.src='Images/Turtle/turtle.jpeg'" onmouseout="this.src='Images/Turtle/turtle.jpeg'" />
           <div>Turtle</div>
         </div>
         <div class="animal-option" data-animal="cat" style="scroll-snap-align: center;">
-          <img src="Images/Cat/cat.jpeg" alt="Cat" id="catImg" onmouseover="this.src='Images/Cat/cat_jumping.jpeg'" onmouseout="this.src='Images/Cat/cat.jpeg'" />
+          <img src="Images/Cat/cat.jpeg" alt="Cat" id="catImg" onmouseover="this.src='Images/Cat/cat.jpeg'" onmouseout="this.src='Images/Cat/cat.jpeg'" />
           <div>Cat</div>
         </div>
         <div class="animal-option" data-animal="owl" style="scroll-snap-align: center;">
-          <img src="Images/Owl/owl_on_branch.jpeg" alt="Owl" id="owlImg" onmouseover="this.src='Images/Owl/owl_off_branch.jpeg'" onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" />
+          <img src="Images/Owl/owl_on_branch.jpeg" alt="Owl" id="owlImg" onmouseover="this.src='Images/Owl/owl_on_branch.jpeg'" onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" />
           <div>Elephant</div>
         </div>
         <div class="animal-option" data-animal="monkey" style="scroll-snap-align: center;">
-          <img src="Images/Monkey/monkey_before_swing.jpeg" alt="Monkey" id="monkeyImg" onmouseover="this.src='Images/Monkey/monkey_after_swing.jpeg'" onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" />
+          <img src="Images/Monkey/monkey_before_swing.jpeg" alt="Monkey" id="monkeyImg" onmouseover="this.src='Images/Monkey/monkey_before_swing.jpeg'" onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" />
           <div>Monkey</div>
         </div>
       </div>
@@ -702,9 +702,17 @@
         veryDifficult: Math.random() * (90 - 75) + 75
       }[usedDifficulty];
 
+      // Map animal names to their correct filenames
+      const animalImageMap = {
+        turtle: 'turtle.jpeg',
+        cat: 'cat.jpeg',
+        owl: 'owl_on_branch.jpeg',
+        monkey: 'monkey_before_swing.jpeg'
+      };
+
       for (let i = 0; i < 5; i++) {
         const img = document.createElement('img');
-        img.src = `Images/${selections.animal}/${selections.animal}.jpeg`;
+        img.src = `Images/${selectedAnimal}/${animalImageMap[selectedAnimal]}`; // Use the correct filename
         img.className = 'moving-animal';
         img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
         img.style.left = '-150px';
