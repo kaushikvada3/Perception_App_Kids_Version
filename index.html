@@ -204,40 +204,38 @@
       position: absolute;
       width: 220px;
       height: auto;
-      top: 50%;
-      transform: translateY(-50%);
     }
     @keyframes easyMoveMultiple {
-      0% { left: -120px; top: 50%; transform: translateY(-50%); }
+      0% { left: -500px; top: 50%; transform: translateY(-50%); }
       100% { left: 100%; top: 50%; transform: translateY(-50%); }
     }
     @keyframes mediumMoveMultiple {
-      0% { left: -120px; top: 100%; }
+      0% { left: -500px; top: 100%; }
       100% { left: 100%; top: -50px; }
     }
     @keyframes hardMoveMultiple {
-      0% { left: -120px; top: -120px; }
+      0% { left: -500px; top: -500px; }
       100% { left: 100%; top: 100%; }
     }
     @keyframes veryHardMoveMultiple {
-      0% { left: -120px; top: -120px; }
+      0% { left: -500px; top: -500px; }
       100% { left: 100%; top: 100%; }
     }
     @keyframes easyMoveMultipleReverse {
-      0% { left: 100%; }
-      100% { left: -120px; }
+      0% { left: 120%; }
+      100% { left: -500px; }
     }
     @keyframes mediumMoveMultipleReverse {
-      0% { left: 100%; top: -50px; }
-      100% { left: -120px; top: 100%; }
+      0% { left: 120%; top: -50px; }
+      100% { left: -500px; top: 100%; }
     }
     @keyframes hardMoveMultipleReverse {
-      0% { left: 100%; top: 100%; }
-      100% { left: -120px; top: -120px; }
+      0% { left: 120%; top: 100%; }
+      100% { left: -500px; top: -500px; }
     }
     @keyframes veryHardMoveMultipleReverse {
-      0% { left: 100%; top: 100%; }
-      100% { left: -120px; top: -120px; }
+      0% { left: 120%; top: 100%; }
+      100% { left: -500px; top: -500px; }
     }
 
     .animal-option:hover {
@@ -339,7 +337,7 @@
     <div class="light"></div>
   </div>
   -->
-  <button onclick="window.location.href='https://perceptual-app-beta-1-hui4j8opj-kaushik-vadas-projects.vercel.app/'"
+  <button onclick="window.location.href='https://perceptual-app-beta-1.vercel.app'"
     style="
       position: fixed;
       top: 20px;
@@ -758,7 +756,7 @@
 
       // Use angle mapping in degrees string for transform
       const angleMapping = {
-        easy: '-45deg',
+        easy: '0deg',          // no tilt for Easy mode
         medium: '-22.5deg',
         hard: '-9.5deg',
         veryHard: '-5deg'
@@ -782,7 +780,10 @@
         img.src = animalImageMap[selectedAnimal]; // Use the absolute path
         img.className = 'moving-animal';
         img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
-        img.style.left = '-150px';
+        // Shift animals farther off‑screen so no part peeks in before animation starts
+        img.style.left = direction === 'Forward'
+          ? `${-600 - i * 80}px`                 // start well off the left edge
+          : `calc(120% + ${i * 80}px)`;          // start well off the right edge
         img.style.width = '220px';
         img.style.animation = `${animClass} ${2 + i * 0.3}s linear ${i * 0.5}s forwards`;
         img.style.transform = `rotate(${rotationAngle})`;
@@ -791,8 +792,10 @@
         // Attach animationend listener to count finished animals
         img.addEventListener('animationend', () => {
           animalsFinished++;
-          if (animalsFinished === 5) {  // all animals done
-            startResponseCountdown();
+          if (animalsFinished === 5) {
+            setTimeout(() => {
+              startResponseCountdown();
+            }, 500); // 500ms pause after animation ends
           }
         });
       }
