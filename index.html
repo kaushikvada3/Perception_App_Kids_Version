@@ -553,7 +553,7 @@
     }
 
     // Step 1: Setup Difficulty Levels
-    const difficultyLevels = ['easy', 'medium', 'hard', 'veryDifficult'];
+    const difficultyLevels = ['easy', 'medium', 'hard', 'veryHard'];
     let currentDifficulty = 'medium'; // Adaptive starts here
     let performanceTracker = []; // Track 'correct', 'wrong', or 'miss'
 
@@ -569,18 +569,24 @@
 
       if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
         score++;
+        // Update on‑screen score after a correct response
+        document.getElementById('score').textContent = `Score: ${score}`;
         isCorrect = true;
         if (key.toUpperCase() === 'Q') window.correctRight++;
         else if (key.toUpperCase() === 'P') window.correctLeft++;
         console.log('Correct! Score:', score);
         lastTrial.correct = true; // Mark the last trial as correct
         performanceTracker.push('correct');
+        if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       } else {
         if (key.toUpperCase() === 'Q') window.incorrectRight++;
         else if (key.toUpperCase() === 'P') window.incorrectLeft++;
         console.log('Incorrect.');
         clearTimeout(responseTimeout);
+        // Keep the score display in sync (score doesn't change here)
+        document.getElementById('score').textContent = `Score: ${score}`;
         performanceTracker.push('wrong');
+        if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       }
 
       adjustDifficulty(); // Adjust difficulty dynamically
@@ -592,6 +598,7 @@
       const lastTrial = trialResults[trialResults.length - 1];
       lastTrial.correct = false; // Mark the last trial as incorrect
       performanceTracker.push('wrong');
+      if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       adjustDifficulty(); // Adjust difficulty dynamically
       showFeedbackImage(false); // Show incorrect feedback image
     }
@@ -606,9 +613,11 @@
       if (lastTwo.every(r => r === 'correct') && index < difficultyLevels.length - 1) {
         currentDifficulty = difficultyLevels[index + 1]; // Increase difficulty
         console.log('Increased to:', currentDifficulty);
+        performanceTracker = []; // reset after change
       } else if (lastTwo.every(r => r === 'wrong') && index > 0) {
         currentDifficulty = difficultyLevels[index - 1]; // Decrease difficulty
         console.log('Decreased to:', currentDifficulty);
+        performanceTracker = []; // reset after change
       }
     }
 
@@ -754,9 +763,8 @@
         veryHard: '-5deg'
       };
       // Map usedDifficulty to correct spelling for mapping
-      // If currentDifficulty is "veryDifficult" (adaptive), treat as "veryHard"
-      let difficultyKey = usedDifficulty;
-      if (difficultyKey === 'veryDifficult') difficultyKey = 'veryHard';
+      // name now consistent with difficultyLevels
+      const difficultyKey = usedDifficulty; // name now consistent with difficultyLevels
       const rotationAngle = angleMapping[difficultyKey];
 
       // Use absolute paths based on your GitHub Pages URL
@@ -866,7 +874,7 @@
       }, selections.outcomeDuration * 1000); // Controlled by outcomeDuration
     }
 
-    // --- PDF Export Function ---
+    /* ------------- PDF EXPORT DISABLED -------------
     async function exportResultsToPDF() {
       // Wait a moment to ensure charts fully render
       await new Promise(res => setTimeout(res, 500));
@@ -885,6 +893,7 @@
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
       pdf.save('SensorySafari_Results.pdf');
     }
+    ------------- END PDF EXPORT DISABLED -------------*/
 
     function displayResultsChart() {
       const chartContainer = document.getElementById('chartContainer');
@@ -935,8 +944,7 @@
                   visualDistractorData,
                   'Attention Threshold (2)');
 
-      // --- Automatically export results to PDF after charts render
-      exportResultsToPDF();
+      // exportResultsToPDF(); // (PDF download temporarily disabled)
     }
 
     function renderChart(canvasId, title, data, thresholdLabel) {
