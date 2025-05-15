@@ -1061,29 +1061,25 @@
     function toggleLights() {
       const btn = document.getElementById('lightsToggleBtn');
       btn.classList.toggle('active');
-    
+
       if (btn.classList.contains('active')) {
+        // User enabled lights, but we don't start flashing now.
+        // Actual flashing will begin inside runTask() when the game starts.
         btn.textContent = 'Lights On';
-    
-        // Start background cycling
-        backgroundCycleInterval = setInterval(() => {
-          document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
+      } else {
+        // User disabled lights.  If a flashing interval is currently running
+        // (e.g., mid‑game), stop it and restore the default background.
+        btn.textContent = 'Lights Off?';
+        if (backgroundCycleInterval !== null) {
+          clearInterval(backgroundCycleInterval);
+          backgroundCycleInterval = null;
+          currentBackgroundIndex = 0;
+          document.body.style.backgroundImage = "url('Images/Background.jpeg')";
           document.body.style.backgroundSize = 'cover';
           document.body.style.backgroundPosition = 'top left';
           document.body.style.backgroundRepeat = 'no-repeat';
           document.body.style.backgroundAttachment = 'fixed';
-          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-        }, 500); // Change background every 500ms
-      } else {
-        btn.textContent = 'Lights Off?';
-        clearInterval(backgroundCycleInterval);
-        backgroundCycleInterval = null;
-        currentBackgroundIndex = 0;
-        document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'top left';
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundAttachment = 'fixed';
+        }
       }
     }
 
