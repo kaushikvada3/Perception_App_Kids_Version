@@ -94,8 +94,9 @@
       padding: 5px;
     }
     .animal-option.selected {
-      border-color: gold;
+      border: 4px solid gold;
       transform: scale(1.1);
+      box-shadow: 0 0 10px gold;
     }
     button {
       display: block;
@@ -291,6 +292,47 @@
       color: #fff;
       border-color: #28a745;
     }
+    /* Responsive Design for Sensory Safari */
+    @media (max-width: 768px) {
+      .container {
+        width: 90%;
+        padding: 15px;
+      }
+
+      .animal-option img {
+        width: 80px;
+        height: 80px;
+      }
+
+      #wave-container {
+        height: 400px;
+      }
+
+      button, #buttons button {
+        padding: 10px 20px;
+        font-size: 1em;
+      }
+
+      #test button {
+        width: 50px;
+        font-size: 1.5em;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 80%;
+      }
+
+      #wave-container {
+        height: 700px;
+      }
+
+      .animal-option img {
+        width: 140px;
+        height: 140px;
+      }
+    }
   </style>
   <style>
     /* .flashing-lights {
@@ -421,11 +463,11 @@
     <h2>Task <span id="taskNum">1</span></h2>
     <div style="display: flex; align-items: stretch; justify-content: center; height: 600px;">
       <div style="flex-shrink: 0; display: flex; align-items: center;">
-        <button onclick="handleResponse('P')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">P</button>
+        <button onclick="handleResponse('ArrowLeft')" style="height: 100%; width: 60px; font-size: 2em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">←</button>
       </div>
-      <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.95); border-radius: 10px;"></div>
+      <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.6); border-radius: 10px;"></div>
       <div style="flex-shrink: 0; display: flex; align-items: center;">
-        <button onclick="handleResponse('Q')" style="height: 100%; width: 60px; font-size: 1.5em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">Q</button>
+        <button onclick="handleResponse('ArrowRight')" style="height: 100%; width: 60px; font-size: 2em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">→</button>
       </div>
     </div>
     <p id="score" style="color: #FFD700; font-size: 2em; text-shadow: 2px 2px 5px #000;">Score: 0</p>
@@ -453,6 +495,7 @@
   </div>
 
   <script>
+    window.lightsEnabled = false;
     let responseTimeout;
     let backgroundCycleInterval = null;
     let visualCountdownInterval = null;
@@ -491,13 +534,21 @@
       input.addEventListener('input', () => span.textContent = input.value);
     });
 
-    document.querySelectorAll('.animal-option').forEach(el => {
-      el.addEventListener('click', () => {
+    // Attach animal selection logic after DOM fully rendered to avoid race conditions
+    setTimeout(() => {
+      const container = document.getElementById('animalList');
+      if (!container) return;
+
+      container.addEventListener('click', (e) => {
+        const selectedEl = e.target.closest('.animal-option');
+        if (!selectedEl || !container.contains(selectedEl)) return;
+
         document.querySelectorAll('.animal-option').forEach(opt => opt.classList.remove('selected'));
-        el.classList.add('selected');
-        selectedAnimal = el.getAttribute('data-animal');
+        selectedEl.classList.add('selected');
+        selectedAnimal = selectedEl.getAttribute('data-animal');
+        console.log('Animal selected:', selectedAnimal);
       });
-    });
+    }, 100);
 
     function startGame() {
       const selectedDifficulty = document.getElementById('difficulty').value;
@@ -563,6 +614,10 @@
       console.log('Correct Answer:', window.correctAnswer);
       clearInterval(visualCountdownInterval);
 
+      // Map arrow keys to P/Q for backend logic
+      if (key === 'ArrowLeft') key = 'P';
+      if (key === 'ArrowRight') key = 'Q';
+
       const lastTrial = trialResults[trialResults.length - 1];
       let isCorrect = false;
 
@@ -589,6 +644,13 @@
       }
 
       adjustDifficulty(); // Adjust difficulty dynamically
+
+      // Stop all animal animations immediately upon user response
+      const animals = document.querySelectorAll('.moving-animal');
+      animals.forEach(animal => {
+        animal.style.animation = 'none';
+      });
+
       showFeedbackImage(isCorrect); // Show feedback image after response
     }
 
@@ -665,6 +727,7 @@
         document.getElementById('test').style.display = 'none';
         document.getElementById('gameOver').style.display = 'block';
         displayResultsChart(); // Display results chart at the end
+        saveSessionToFirestore(); // Now uses window.playerInfo.name as document ID
         
         // Map variables to new naming
         const correctGuessRight    = window.correctRight   || 0;
@@ -775,6 +838,13 @@
         monkey: `${basePath}/Monkey/monkey_before_swing.jpeg`
       };
 
+      // Calculate animation timing based on stimDuration and number of animals
+      const stimDuration = selections.stimDuration * 1000;
+      const baseDuration = stimDuration / 1000; // in seconds
+      const totalAnimals = 5;
+      const stepDelay = baseDuration / totalAnimals;
+      const animDuration = baseDuration * 0.8; // reserve a bit of time for transition
+
       for (let i = 0; i < 5; i++) {
         const img = document.createElement('img');
         img.src = animalImageMap[selectedAnimal]; // Use the absolute path
@@ -785,7 +855,7 @@
           ? `${-600 - i * 80}px`                 // start well off the left edge
           : `calc(120% + ${i * 80}px)`;          // start well off the right edge
         img.style.width = '220px';
-        img.style.animation = `${animClass} ${2 + i * 0.3}s linear ${i * 0.5}s forwards`;
+        img.style.animation = `${animClass} ${animDuration}s linear ${i * stepDelay}s forwards`;
         img.style.transform = `rotate(${rotationAngle})`;
         img.style.zIndex = 5 - i;
         waveContainer.appendChild(img);
@@ -819,25 +889,30 @@
           distractorType = "sound";
         }
 
-        if (document.getElementById('lightsToggleBtn').classList.contains('active')) {
-          backgroundCycleInterval = setInterval(() => {
-            document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-            currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-          }, 500);
+        const stimDuration = selections.stimDuration * 1000;
+        const lightStartDelay = stimDuration * 0.6;
+        const lightEndDelay = stimDuration * 0.95;
+
+        if (window.lightsEnabled) {
+          setTimeout(() => {
+            backgroundCycleInterval = setInterval(() => {
+              document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
+              currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
+            }, 500);
+          }, lightStartDelay);
+
+          setTimeout(() => {
+            clearInterval(backgroundCycleInterval);
+            backgroundCycleInterval = null;
+            document.body.style.backgroundImage = "url('Images/Background.jpeg')";
+          }, lightEndDelay);
+
           distractorType = distractorType === "sound" ? "both" : "visual";
         }
-
-        setTimeout(() => {
-          if (selections.soundOn) {
-            beepAudio.pause();
-          }
-          clearInterval(backgroundCycleInterval);
-          document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-        }, lightSoundDuration);
       }
 
-      // Log distractor usage for this trial
-      trialResults.push({ type: distractorType, correct: false });
+      // Log distractor usage for this trial, including difficulty
+      trialResults.push({ type: distractorType, correct: false, difficulty: usedDifficulty });
 
       // No timeout-based countdown trigger needed; countdown starts after last animal's animationend.
       document.getElementById('responseCountdown').textContent = '';
@@ -904,66 +979,161 @@
       document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
       chartContainer.style.display = 'block'; // Ensure the chart container is visible
 
-      const groupedResults = trialResults.reduce((acc, trial, index) => {
-        const groupKey = Math.floor(index / 5); // Group trials into chunks of 5
-        acc[trial.type] = acc[trial.type] || [];
-        if (!acc[trial.type][groupKey]) acc[trial.type][groupKey] = { correct: 0, incorrect: 0 };
+      // Group trial results by distractor type and difficulty
+      const groupedResults = { none: {}, sound: {}, visual: {} };
+      trialResults.forEach(trial => {
+        const diff = trial.difficulty || 'unknown';
+        const type = trial.type || 'none';
+        if (!groupedResults[type][diff]) groupedResults[type][diff] = { correct: 0, incorrect: 0 };
         if (trial.correct) {
-          acc[trial.type][groupKey].correct++;
+          groupedResults[type][diff].correct++;
         } else {
-          acc[trial.type][groupKey].incorrect++;
+          groupedResults[type][diff].incorrect++;
         }
-        return acc;
-      }, { none: [], sound: [], visual: [] });
+      });
 
-      // Helper function to prepare data for Chart.js
-      function prepareChartData(groupedData) {
+      // Helper function to prepare data for Chart.js by difficulty level
+      function prepareChartDataByDifficulty(groupedData) {
+        const difficultyOrder = ['easy', 'medium', 'hard', 'veryHard', 'unknown'];
+        // Only include present difficulties, sorted in order
+        const presentDiffs = Object.keys(groupedData);
+        const sortedDiffs = difficultyOrder.filter(d => presentDiffs.includes(d))
+          .concat(presentDiffs.filter(d => !difficultyOrder.includes(d)));
         const labels = [];
         const correctData = [];
         const incorrectData = [];
-        groupedData.forEach((group, index) => {
-          labels.push(`Group ${index + 1}`);
-          correctData.push(group.correct);
-          incorrectData.push(group.incorrect);
+        sortedDiffs.forEach(diff => {
+          labels.push(diff.charAt(0).toUpperCase() + diff.slice(1));
+          correctData.push(groupedData[diff].correct);
+          incorrectData.push(groupedData[diff].incorrect);
         });
         return { labels, correctData, incorrectData };
       }
 
-      // Prepare data for each chart
-      const noDistractorData = prepareChartData(groupedResults.none);
-      const auditoryDistractorData = prepareChartData(groupedResults.sound);
-      const visualDistractorData = prepareChartData(groupedResults.visual);
+      // Prepare data for each chart (bars = difficulty levels)
+      const auditoryDistractorData = prepareChartDataByDifficulty(groupedResults.sound);
+      const visualDistractorData = prepareChartDataByDifficulty(groupedResults.visual);
 
-      // Render charts with threshold label
-      renderChart('noDistractorChart',
-                  'No Distractors',
-                  noDistractorData,
-                  'Sensory Threshold (2)');
-      renderChart('auditoryDistractorChart',
-                  'Auditory Distractors',
-                  auditoryDistractorData,
-                  'Attention Threshold (2)');
-      renderChart('visualDistractorChart',
-                  'Visual Distractors',
-                  visualDistractorData,
-                  'Attention Threshold (2)');
+      // Compute d' and interpretation (copied from runTask() end)
+      const correctGuessRight    = window.correctRight   || 0;
+      const inCorrectGuessRight  = window.incorrectRight || 0;
+      const correctGuessLeft     = window.correctLeft    || 0;
+      const inCorrectGuessLeft   = window.incorrectLeft  || 0;
+      const missedGuess          = (window.noResponseRight || 0) + (window.noResponseLeft || 0);
+      let fractHit = 0, fractCR = 0;
+      if (correctGuessRight + inCorrectGuessRight + missedGuess / 2 !== 0) {
+        fractHit = correctGuessRight / (correctGuessRight + inCorrectGuessRight + missedGuess / 2);
+      }
+      if (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2 !== 0) {
+        fractCR = inCorrectGuessLeft / (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2);
+      }
+      function norminv(p) {
+        if (p === 0) {
+          p = 0.1;
+        }
+        const a1 = -39.69683028665376;
+        const a2 = 220.9460984245205;
+        const a3 = -275.9285104469687;
+        const a4 = 138.357751867269;
+        const a5 = -30.66479806614716;
+        const a6 = 2.506628277459239;
+        const t = 1.0 / (1.0 + 0.2316419 * Math.abs(p));
+        const d = 0.3989422804014337 * Math.exp(-p * p / 2.0);
+        const x = ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t;
+        return 1 - d * x;
+      }
+      const dp1 = norminv(fractHit);
+      const dp2 = norminv(fractCR);
+      const dprime1 = (dp1 - dp2).toFixed(3);
+      // Compute d′-based interpretation message
+      let dPrimeInterpretation = '';
+      if (dprime1 > 1.5) {
+        dPrimeInterpretation = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
+      } else if (dprime1 > 0.5) {
+        dPrimeInterpretation = 'Moderate sensory recognition. Performance is above average.';
+      } else if (dprime1 > 0) {
+        dPrimeInterpretation = 'Slightly better than guessing. May suggest some perceptual difficulty.';
+      } else if (dprime1 == 0) {
+        dPrimeInterpretation = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
+      } else {
+        dPrimeInterpretation = 'Performance is below chance. May suggest difficulty with sensory perception.';
+      }
 
+      // Build difficulty-based dataset for all trials (bars = difficulty levels)
+      const difficultyGroups = {};
+      trialResults.forEach(trial => {
+        const level = trial.difficulty || 'unknown';
+        if (!difficultyGroups[level]) {
+          difficultyGroups[level] = { correct: 0, incorrect: 0 };
+        }
+        if (trial.correct) {
+          difficultyGroups[level].correct++;
+        } else {
+          difficultyGroups[level].incorrect++;
+        }
+      });
+      // Sort difficulty labels in order for consistent bar order
+      const difficultyOrder = ['easy', 'medium', 'hard', 'veryHard', 'unknown'];
+      const difficultyLabels = Object.keys(difficultyGroups)
+        .sort((a, b) => difficultyOrder.indexOf(a) - difficultyOrder.indexOf(b));
+      const correctData = [];
+      const incorrectData = [];
+      difficultyLabels.forEach(level => {
+        correctData.push(difficultyGroups[level].correct);
+        incorrectData.push(difficultyGroups[level].incorrect);
+      });
+      const difficultyData = {
+        labels: difficultyLabels.map(label => label.charAt(0).toUpperCase() + label.slice(1)),
+        correctData,
+        incorrectData
+      };
+
+      // Only render charts if there is at least one valid trial for each type
+      const hasAuditoryData =
+        auditoryDistractorData.correctData.some(v => v > 0) ||
+        auditoryDistractorData.incorrectData.some(v => v > 0);
+      const hasVisualData =
+        visualDistractorData.correctData.some(v => v > 0) ||
+        visualDistractorData.incorrectData.some(v => v > 0);
+      const hasNoDistractorData =
+        trialResults.filter(tr => tr.type === 'none').length > 0;
+
+      if (hasAuditoryData) {
+        renderChart(
+          'auditoryDistractorChart',
+          'Auditory Distractors (by Difficulty)',
+          auditoryDistractorData,
+          'Difficulty Level',
+          dPrimeInterpretation
+        );
+      }
+
+      if (hasVisualData) {
+        renderChart(
+          'visualDistractorChart',
+          'Visual Distractors (by Difficulty)',
+          visualDistractorData,
+          'Difficulty Level',
+          dPrimeInterpretation
+        );
+      }
+
+      // Render difficulty-based bar chart only if at least one distractor type has data or there are no-distractor trials
+      if (
+        difficultyLabels.length > 0 &&
+        (hasAuditoryData || hasVisualData || hasNoDistractorData)
+      ) {
+        // Use actual unique difficulties from trialResults for xAxisLabel
+        const uniqueDifficulties = new Set(trialResults.map(tr => tr.difficulty));
+        const xAxisLabel = uniqueDifficulties.size === 1
+          ? Array.from(uniqueDifficulties)[0].charAt(0).toUpperCase() + Array.from(uniqueDifficulties)[0].slice(1) + ' Difficulty'
+          : 'Increasing Difficulty';
+        renderChart('noDistractorChart', xAxisLabel, difficultyData, 'Performance Overview', dPrimeInterpretation);
+      }
       // exportResultsToPDF(); // (PDF download temporarily disabled)
     }
 
-    function renderChart(canvasId, title, data, thresholdLabel) {
-      // Calculate total correct and determine interpretation
-      const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
-      const interpretationText = totalCorrect > 2
-          ? (canvasId === 'noDistractorChart'
-              ? 'Good Sensory function'
-              : 'No attentional issues')
-          : (canvasId === 'noDistractorChart'
-              ? 'Poor sensory function'
-              : (canvasId === 'auditoryDistractorChart'
-                  ? 'Attentional issues in the presence of lights'
-                  : 'Sound‑related attentional issues'));
-
+    function renderChart(canvasId, title, data, thresholdLabel, interpretationText) {
       // Remove old interpretation paragraph if present
       const oldP = document.querySelector(`#${canvasId}-interp`);
       if (oldP) oldP.remove();
@@ -1022,19 +1192,21 @@
       const canvasEl = document.getElementById(canvasId);
       const interp = document.createElement('p');
       interp.id = `${canvasId}-interp`;
-      interp.style.color = (interpretationText.includes('Sound') ? 'red' : 'green');
+      interp.style.color = 'navy';
       interp.style.fontWeight = 'bold';
       interp.textContent = interpretationText;
       canvasEl.parentNode.insertBefore(interp, canvasEl.nextSibling);
 
-      // Arrow label
-      const arrow = document.createElement('p');
-      arrow.style.color = 'navy';
-      arrow.style.fontSize = '0.9em';
-      arrow.style.marginTop = '-5px';
-      arrow.style.marginBottom = '15px';
-      arrow.textContent = 'Increasing Difficulty →';
-      canvasEl.parentNode.insertBefore(arrow, interp.nextSibling);
+      // Arrow label: only show if more than one data label
+      if (data.labels.length > 1) {
+        const arrow = document.createElement('p');
+        arrow.style.color = 'navy';
+        arrow.style.fontSize = '0.9em';
+        arrow.style.marginTop = '-5px';
+        arrow.style.marginBottom = '15px';
+        arrow.textContent = 'Increasing Difficulty →';
+        canvasEl.parentNode.insertBefore(arrow, interp.nextSibling);
+      }
     }
 
     function toggleSound() {
@@ -1061,21 +1233,13 @@
     function toggleLights() {
       const btn = document.getElementById('lightsToggleBtn');
       btn.classList.toggle('active');
-    
+
       if (btn.classList.contains('active')) {
         btn.textContent = 'Lights On';
-    
-        // Start background cycling
-        backgroundCycleInterval = setInterval(() => {
-          document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-          document.body.style.backgroundSize = 'cover';
-          document.body.style.backgroundPosition = 'top left';
-          document.body.style.backgroundRepeat = 'no-repeat';
-          document.body.style.backgroundAttachment = 'fixed';
-          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-        }, 500); // Change background every 500ms
+        window.lightsEnabled = true; // Store state without triggering blinking
       } else {
         btn.textContent = 'Lights Off?';
+        window.lightsEnabled = false;
         clearInterval(backgroundCycleInterval);
         backgroundCycleInterval = null;
         currentBackgroundIndex = 0;
@@ -1170,5 +1334,39 @@
       <li>Chart at the end shows your performance</li>
     </ol>
   </div>
+  <!-- 
+    🔥 What Is Firestore?
+
+    Firestore (Cloud Firestore) is a NoSQL database from Firebase (Google) that stores and syncs data in real-time. 
+    It's used here to save gameplay sessions and analyze past results.
+
+    🔍 Why Firestore in This App:
+      - This app runs a visual perception test
+      - It collects trial results and scores
+      - Now we store those results in Firestore so users can track progress over time
+
+    🧠 Analogy:
+      - Firestore = a giant online spreadsheet
+      - Each user = one section
+      - Each game session = one row
+      - Charts pull data from those rows to show historical performance
+
+    🔐 Example Firestore Structure:
+      /users
+        /diya123
+          /sessions
+            /1718035992000
+              - date: "2025-06-10T..."
+              - difficulty: "Medium"
+              - trialResults: [ ... ]
+
+    ✅ Benefits:
+      - Real-time updates
+      - Cloud-hosted and secure
+      - Free at small scale
+      - Enables long-term tracking and future upgrades (e.g., user accounts, login, dashboards)
+
+    Firestore is initialized in this file and used in the function saveSessionToFirestore(userId)
+  -->
 </body>
 </html>
