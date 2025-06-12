@@ -955,6 +955,7 @@
             loginButton.disabled = false;
             loginButton.textContent = "Login";
             // Show sign out button after login
+            document.getElementById("signOutBtn").style.display = "block";
             if (errorMessage) {
               errorMessage.style.display = "none";
               errorMessage.textContent = "";
