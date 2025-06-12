@@ -615,6 +615,9 @@
         <button type="button" id="login-btn" onclick="loginUser()" style="background-color:#28a745;">Login</button>
       </div>
       <div id="loginErrorMessage" style="display: none; color: red; margin-top: 10px;"></div>
+      <div id="loginSpinner" style="display:none; text-align:center; margin-top:10px;">
+        <img src="Images/spinner.gif" alt="Loading..." style="width:70px; height:70px;" />
+      </div>
     </form>
   </div>
 
@@ -924,11 +927,14 @@
         errorMessage.style.display = "none";
         errorMessage.textContent = "";
       }
+      // Show spinner
+      document.getElementById("loginSpinner").style.display = "block";
       if (!username || !password) {
         if (errorMessage) {
           errorMessage.style.display = "block";
           errorMessage.textContent = "Please enter your username and password.";
         }
+        document.getElementById("loginSpinner").style.display = "none";
         return;
       }
       db.collection("users").doc(username).get().then(doc => {
@@ -947,12 +953,16 @@
               errorMessage.style.display = "none";
               errorMessage.textContent = "";
             }
+            // Hide spinner after successful login
+            document.getElementById("loginSpinner").style.display = "none";
           } else {
             // Show error message for incorrect password
             if (errorMessage) {
               errorMessage.style.display = "block";
               errorMessage.textContent = "Incorrect username or password. Please try again.";
             }
+            // Hide spinner after failed login
+            document.getElementById("loginSpinner").style.display = "none";
           }
         } else {
           // Show error message for non-existent user
@@ -960,6 +970,8 @@
             errorMessage.style.display = "block";
             errorMessage.textContent = "Incorrect username or password. Please try again.";
           }
+          // Hide spinner after failed login
+          document.getElementById("loginSpinner").style.display = "none";
         }
       });
     }
