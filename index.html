@@ -711,8 +711,8 @@
     </div>
     <div class="form-group">
       <label for="stimDuration">Stimulus Duration (sec):</label>
-      <input type="range" id="stimDuration" min="1" max="10" value="3" />
-      <span id="stimDurationValue">3</span>
+      <input type="range" id="stimDuration" min="1" max="10" value="5" />
+      <span id="stimDurationValue">5</span>
     </div>
     <div class="form-group">
       <label for="outcomeDuration">Outcome Duration (sec):</label>
@@ -792,9 +792,9 @@
 
   <div id="chartContainer" style="display: none; text-align: center; margin-top: 30px; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); width: 100%; max-width: 100%;">
     <h2 style="color: black;">Trial Results</h2>
-    <canvas id="noDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
-    <canvas id="auditoryDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
-    <canvas id="visualDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
+    <canvas id="noDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display:none;"></canvas>
+    <canvas id="auditoryDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display:none;"></canvas>
+    <canvas id="visualDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display:none;"></canvas>
   </div>
 
   <script>
@@ -1061,13 +1061,13 @@
       countdownStarted = false;
 
       const lastTrial = trialResults[trialResults.length - 1];
-      let isCorrect = false;
+      const isCorrect = key.toUpperCase() === window.correctAnswer.toUpperCase();
+      lastTrial.correct = isCorrect;
 
-      if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
+      if (isCorrect) {
         score++;
         // Update on‑screen score after a correct response
         document.getElementById('score').textContent = `Score: ${score}`;
-        isCorrect = true;
         if (key.toUpperCase() === 'Q') window.correctRight++;
         else if (key.toUpperCase() === 'P') window.correctLeft++;
         console.log('Correct! Score:', score);
@@ -1092,7 +1092,7 @@
     function handleMissedResponse() {
       console.log('No response given.');
       const lastTrial = trialResults[trialResults.length - 1];
-      lastTrial.correct = false; // Mark the last trial as incorrect
+      lastTrial.correct = false;
       performanceTracker.push('wrong');
       if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       adjustDifficulty(); // Adjust difficulty dynamically
@@ -1354,38 +1354,42 @@
 
       const lightSoundDuration = stimDuration * 0.6; // 60% of stimulus duration
 
-      // Randomly decide whether to activate lights and sounds for this trial
-      const activateLightSound = Math.random() > 0.5;
-      let distractorType = "none";
+      // ---------- Decide which distractors are active for this trial ----------
+      const lightsAreOn = document.getElementById('lightsToggleBtn')
+                                .classList.contains('active');
+      const soundIsOn   = selections.soundOn;
 
-      if (activateLightSound) {
-        if (selections.soundOn) {
-          beepAudio.pause();
-          beepAudio.currentTime = 0;
-          beepAudio.play();
-          distractorType = "sound";
-        }
+      let distractorType = 'none';          // default → baseline
+      if (lightsAreOn && soundIsOn)   distractorType = 'both';
+      else if (lightsAreOn)           distractorType = 'visual';
+      else if (soundIsOn)             distractorType = 'sound';
+      // ------------------------------------------------------------------------
 
-        if (document.getElementById('lightsToggleBtn').classList.contains('active')) {
-        backgroundCycleInterval = setInterval(() => {
-          document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-        }, 500);
-        distractorType = distractorType === "sound" ? "both" : "visual";
+      // turn sound or lights on only if user enabled them
+      if (soundIsOn) {
+        beepAudio.pause();
+        beepAudio.currentTime = 0;
+        beepAudio.play();
       }
 
-      setTimeout(() => {
-        if (selections.soundOn) {
-          beepAudio.pause();
-        }
-        clearInterval(backgroundCycleInterval);
-        backgroundCycleInterval = null;
-        document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-      }, lightSoundDuration); // 66% of stimDuration
+      if (lightsAreOn) {
+        document.body.style.transition = 'background-image 0.8s ease-in-out';
+        backgroundCycleInterval = setInterval(() => {
+          document.body.style.backgroundImage =
+            `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
+          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
+        }, 500);
+
+        // stop blinking after 60 % of the stimulus duration
+        setTimeout(() => {
+          clearInterval(backgroundCycleInterval);
+          backgroundCycleInterval = null;
+          document.body.style.backgroundImage = "url('Images/Background.jpeg')";
+        }, selections.stimDuration * 0.6 * 1000);
       }
 
       // Log distractor usage for this trial
-      trialResults.push({ type: distractorType, correct: false });
+      trialResults.push({ type: distractorType, correct: null });  // mark ungraded
 
       // No timeout-based countdown trigger needed; countdown starts after last animal's animationend.
       document.getElementById('responseCountdown').textContent = '';
@@ -1530,95 +1534,73 @@
 
     function displayResultsChart() {
       const chartContainer = document.getElementById('chartContainer');
-      document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
-      chartContainer.style.display = 'block'; // Ensure the chart container is visible
+      document.getElementById('gameOver').appendChild(chartContainer);
+      chartContainer.style.display = 'block';
 
-      const groupedResults = trialResults.reduce((acc, trial, index) => {
-        const groupKey = Math.floor(index / 5); // Group trials into chunks of 5
-        acc[trial.type] = acc[trial.type] || [];
-        if (!acc[trial.type][groupKey]) acc[trial.type][groupKey] = { correct: 0, incorrect: 0 };
-        if (trial.correct) {
-          acc[trial.type][groupKey].correct++;
-        } else {
-          acc[trial.type][groupKey].incorrect++;
+      // Group trialResults by distractor type
+      let groupedResults = { none: [], sound: [], visual: [] };
+      let counters = { none: 0, sound: 0, visual: 0 };
+
+      trialResults.forEach(trial => {
+        const key = trial.type === 'none' ? 'none' : (trial.type === 'sound' ? 'sound' : 'visual');
+        // Use one group for entire session of each type
+        const groupIndex = 0;
+        if (!groupedResults[key][groupIndex]) {
+          groupedResults[key][groupIndex] = { correct: 0, incorrect: 0 };
         }
-        return acc;
-      }, { none: [], sound: [], visual: [] });
+        groupedResults[key][groupIndex][trial.correct ? 'correct' : 'incorrect']++;
+        counters[key]++;
+      });
 
-      // Pass difficulty mode to prepareChartData
-      const difficultyMode = selections.difficulty; // "easy", "medium", ..., or "adaptive"
-
-      // Helper function to prepare data for Chart.js, now takes difficultyMode
-      function prepareChartData(groupedData, difficultyMode) {
-        const labels = [];
-        const correctData = [];
-        const incorrectData = [];
-
-        groupedData.forEach((group, index) => {
-          let label;
-          if (difficultyMode === 'adaptive') {
-            // Adaptive: cycle through Easy, Medium, Hard, Very Hard
-            const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][index % 4];
-            label = `${difficultyGroup} #${Math.floor(index / 4) + 1}`;
-          } else {
-            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} #${index + 1}`;
-          }
-          labels.push(label);
-          correctData.push(group.correct);
-          incorrectData.push(group.incorrect);
+      // Prepare data helper
+      function prepareChartData(arr) {
+        const labels = [], correctData = [], incorrectData = [];
+        arr.forEach((grp, i) => {
+          labels.push(`${selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1)} #${i+1}`);
+          correctData.push(grp.correct);
+          incorrectData.push(grp.incorrect);
         });
-
         return { labels, correctData, incorrectData };
       }
 
-      // Prepare data for each chart, pass difficulty
-      const noDistractorData = prepareChartData(groupedResults.none, selections.difficulty);
-      const auditoryDistractorData = prepareChartData(groupedResults.sound, selections.difficulty);
-      const visualDistractorData = prepareChartData(groupedResults.visual, selections.difficulty);
+      const hasNone = groupedResults.none.length > 0;
+      const hasSound = groupedResults.sound.length > 0;
+      const hasVisual = groupedResults.visual.length > 0;
 
-      // Render charts conditionally based on distractor type usage
-      if (groupedResults.none.length > 0) {
-        renderChart('noDistractorChart',
-                    'No Distractors',
-                    noDistractorData,
-                    'Sensory Threshold (2)');
-      } else {
-        document.getElementById('noDistractorChart').style.display = 'none';
+      // Hide canvases we don’t need before rendering
+      document.getElementById('noDistractorChart').style.display       = hasNone   ? 'block' : 'none';
+      document.getElementById('auditoryDistractorChart').style.display = hasSound  ? 'block' : 'none';
+      document.getElementById('visualDistractorChart').style.display   = hasVisual ? 'block' : 'none';
+
+      // No Distractor Chart
+      const noEl = document.getElementById('noDistractorChart');
+      if (hasNone) {
+        renderChart('noDistractorChart', 'No Distractors (Baseline)', prepareChartData(groupedResults.none));
       }
 
-      if (groupedResults.sound.length > 0) {
-        renderChart('auditoryDistractorChart',
-                    'Auditory Distractors',
-                    auditoryDistractorData,
-                    'Attention Threshold (2)');
-      } else {
-        document.getElementById('auditoryDistractorChart').style.display = 'none';
+      // Auditory
+      const audEl = document.getElementById('auditoryDistractorChart');
+      if (hasSound) {
+        renderChart('auditoryDistractorChart', 'Auditory Distractors', prepareChartData(groupedResults.sound));
       }
 
-      if (groupedResults.visual.length > 0) {
-        renderChart('visualDistractorChart',
-                    'Visual Distractors',
-                    visualDistractorData,
-                    'Attention Threshold (2)');
-      } else {
-        document.getElementById('visualDistractorChart').style.display = 'none';
+      // Visual
+      const visEl = document.getElementById('visualDistractorChart');
+      if (hasVisual) {
+        renderChart('visualDistractorChart', 'Visual Distractors', prepareChartData(groupedResults.visual));
       }
-
-      // exportResultsToPDF(); // (PDF download temporarily disabled)
     }
 
     function renderChart(canvasId, title, data, thresholdLabel) {
-      // Calculate total correct and determine interpretation
       const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
-      const interpretationText = totalCorrect > 2
-          ? (canvasId === 'noDistractorChart'
-              ? 'Good Sensory function'
-              : 'No attentional issues')
-          : (canvasId === 'noDistractorChart'
-              ? 'Poor sensory function'
-              : (canvasId === 'auditoryDistractorChart'
-                  ? 'Attentional issues in the presence of lights'
-                  : 'Sound‑related attentional issues'));
+      let interpretationText;
+      if (canvasId === 'noDistractorChart') {
+        interpretationText = totalCorrect > 2 ? 'Good sensory function' : 'Poor sensory function';
+      } else if (canvasId === 'auditoryDistractorChart') {
+        interpretationText = totalCorrect > 2 ? 'No attentional issues' : 'Sound-related attentional issues';
+      } else {
+        interpretationText = totalCorrect > 2 ? 'No attentional issues' : 'Visual-related attentional issues';
+      }
 
       // Remove old interpretation paragraph if present
       const oldP = document.querySelector(`#${canvasId}-interp`);
