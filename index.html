@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sensory Safari</title>
   <style>
+    #home {
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out;
+    }
     #registerPage {
       max-width: 700px;
       width: 90%;
@@ -73,11 +77,21 @@
     #registerPage a:hover {
       color: #ffffff;
     }
+    /* --- Animated, kid-friendly authContainer styles --- */
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
     #authContainer {
       padding: 30px 20px;
       background-color: rgba(0, 0, 0, 0.6);
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+      /* Kid-friendly border and shadow */
+      border: 4px solid #FFD700;
+      box-shadow: 0 0 30px rgba(255, 223, 0, 0.5);
     }
 
     #authContainer h2 {
@@ -85,6 +99,9 @@
       font-size: 2em;
       color: #fff;
       text-shadow: 1px 1px 3px #000;
+      /* Playful kid-friendly font */
+      font-family: 'Comic Sans MS', cursive;
+      letter-spacing: 1px;
     }
 
     #authContainer input {
@@ -107,6 +124,8 @@
       border: none;
       color: white;
       transition: transform 0.2s, box-shadow 0.2s;
+      /* Subtle pulse animation for Register/Login buttons */
+      animation: pulse 2s infinite;
     }
 
     #authContainer button:hover {
@@ -946,7 +965,14 @@
             console.log("User authenticated, proceeding to homepage...");
             loggedInUser = username;
             document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('home').style.display = 'block';
+            // Fade in home page
+            const home = document.getElementById('home');
+            home.style.opacity = 0;
+            home.style.display = 'block';
+            home.style.transition = 'opacity 0.8s ease-in-out';
+            requestAnimationFrame(() => {
+              home.style.opacity = 1;
+            });
             // Show sign out button after login
             document.getElementById("signOutBtn").style.display = "block";
             if (errorMessage) {
