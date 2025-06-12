@@ -5,6 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sensory Safari</title>
   <style>
+    #registerPage {
+      max-width: 700px;
+      width: 90%;
+      background-color: rgba(0, 0, 0, 0.6);
+      margin: 50px auto;
+      padding: 30px 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    }
+
+    #registerPage h2 {
+      font-size: 2em;
+      margin-bottom: 25px;
+      color: #fff;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    #registerPage label {
+      display: block;
+      text-align: left;
+      margin-left: 5%;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #fff;
+      font-size: 1.1em;
+    }
+
+    #registerPage input {
+      width: 90%;
+      padding: 12px;
+      font-size: 1.1em;
+      margin-bottom: 15px;
+      background-color: #fefbd8;
+      color: #333;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    #registerPage button {
+      padding: 12px 30px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 10px;
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 0 10px #fff, 0 0 20px #28a745;
+      transition: transform 0.2s;
+    }
+
+    #registerPage button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px #fff, 0 0 25px #28a745;
+    }
+
+    #registerPage a {
+      display: block;
+      margin-top: 20px;
+      font-size: 1em;
+      color: #FFD700;
+      text-decoration: underline;
+    }
+
+    #registerPage a:hover {
+      color: #ffffff;
+    }
+    #authContainer {
+      padding: 30px 20px;
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    #authContainer h2 {
+      margin-bottom: 20px;
+      font-size: 2em;
+      color: #fff;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    #authContainer input {
+      width: 95%;
+      padding: 12px;
+      font-size: 1.1em;
+      margin-bottom: 15px;
+      background-color: #fefbd8;
+      color: #333;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    #authContainer button {
+      font-size: 1em;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      color: white;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #authContainer button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px #fff, 0 0 20px #28a745;
+    }
     body {
       margin: 0;
       font-family: 'Comic Sans MS', cursive, sans-serif;
@@ -16,12 +124,12 @@
       color: #fff;
     }
     .container {
-      background-color: rgba(0, 0, 0, 0.4);
       max-width: 700px;
+      width: 90%;
       margin: 50px auto;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      box-sizing: border-box;
     }
     h1 {
       text-align: center;
@@ -70,9 +178,13 @@
     .animal-options {
       display: flex;
       justify-content: center;
+      align-items: flex-end;
+      gap: 30px;
+      flex-wrap: nowrap;
       overflow-x: auto;
-      gap: 20px;
-      scroll-snap-type: x mandatory;
+      white-space: nowrap;
+      max-width: 100%;
+      box-sizing: border-box;
       padding: 10px 0;
     }
     .animal-option {
@@ -86,17 +198,20 @@
       background: transparent;
       padding: 10px;
       color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 120px;
     }
     .animal-option img {
-      width: 100px;
+      width: auto;
       height: 100px;
-      border-radius: 10px;
-      padding: 5px;
+      object-fit: contain;
+      margin-bottom: 10px;
     }
     .animal-option.selected {
-      border: 4px solid gold;
+      border-color: gold;
       transform: scale(1.1);
-      box-shadow: 0 0 10px gold;
     }
     button {
       display: block;
@@ -146,13 +261,86 @@
       text-align: center;
       margin-top: 30px;
     }
+    #chartContainer {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+      background-color: transparent;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 100%;
+    }
     #wave-container {
       position: relative;
       height: 600px;
       border: 2px solid #fff;
       margin: 20px;
-      background-color: rgba(255, 255, 255,0.85); /* 95% white translucent */
+      background-color: rgba(255, 255, 255, 0.6); /* 60% white translucent */
       overflow: hidden;
+      width: 90%;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+    }
+    /* Responsive design for tablets and phones */
+    @media (max-width: 768px) {
+      .moving-animal {
+        width: 150px;
+        max-width: 100%;
+        height: auto;
+      }
+
+      #wave-container {
+        height: 300px;
+        margin: 10px;
+        width: 98%;
+        max-width: 100%;
+      }
+
+      #test button {
+        font-size: 1.2em;
+        padding: 10px;
+        width: 80px;
+      }
+
+      #countdown h2 {
+        font-size: 2em;
+      }
+
+      #countdownTimer {
+        font-size: 2.5em;
+      }
+
+      .container {
+        width: 95%;
+        padding: 15px;
+        max-width: 100%;
+      }
+
+      .animal-option img {
+        width: 80px;
+        height: 80px;
+      }
+
+      #buttons button {
+        font-size: 1.2em;
+        padding: 15px 25px;
+      }
+
+      #chartContainer {
+        padding: 10px;
+        width: 99%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      canvas {
+        max-width: 100% !important;
+        height: auto !important;
+      }
     }
     @keyframes moveRight {
       from { left: -150px; }
@@ -205,6 +393,8 @@
       position: absolute;
       width: 220px;
       height: auto;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     @keyframes easyMoveMultiple {
       0% { left: -500px; top: 50%; transform: translateY(-50%); }
@@ -292,47 +482,6 @@
       color: #fff;
       border-color: #28a745;
     }
-    /* Responsive Design for Sensory Safari */
-    @media (max-width: 768px) {
-      .container {
-        width: 90%;
-        padding: 15px;
-      }
-
-      .animal-option img {
-        width: 80px;
-        height: 80px;
-      }
-
-      #wave-container {
-        height: 400px;
-      }
-
-      button, #buttons button {
-        padding: 10px 20px;
-        font-size: 1em;
-      }
-
-      #test button {
-        width: 50px;
-        font-size: 1.5em;
-      }
-    }
-
-    @media (min-width: 1200px) {
-      .container {
-        max-width: 80%;
-      }
-
-      #wave-container {
-        height: 700px;
-      }
-
-      .animal-option img {
-        width: 140px;
-        height: 140px;
-      }
-    }
   </style>
   <style>
     /* .flashing-lights {
@@ -365,11 +514,47 @@
     } */
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.3.2/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   </head>
 <body>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script>
+    // Masked typing effect for password fields
+    function handleMaskedTyping(input) {
+      let lastValue = "";
+      input.addEventListener("input", () => {
+        const value = input.value;
+        if (value.length > lastValue.length) {
+          const newChar = value.charAt(value.length - 1);
+          const visiblePart = value.slice(0, -1);
+          input.type = "text";
+          input.value = visiblePart + newChar;
+          setTimeout(() => {
+            if (input.value === visiblePart + newChar) {
+              input.type = "password";
+            }
+          }, 700);
+        }
+        lastValue = input.value;
+      });
+    }
+    const firebaseConfig = {
+      apiKey: "AIzaSyDgIRpqf8GN9uGBTXc0PkLHZh_F3y4L-8",
+      authDomain: "sensory-safari.firebaseapp.com",
+      projectId: "sensory-safari",
+      storageBucket: "sensory-safari.appspot.com",
+      messagingSenderId: "212873494173",
+      appId: "1:212873494173:web:d75aef49c713175d20de74",
+      measurementId: "G-K7MD22YIJ9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
   <!--
   <div id="flashingLights" class="flashing-lights" style="display: none;">
     <div class="light"></div>
@@ -379,6 +564,9 @@
     <div class="light"></div>
   </div>
   -->
+  <button onclick="toggleHowItWorks()" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; font-size: 24px; background-color: #FFD700; color: #000; border: none; border-radius: 50%; width: 50px; height: 50px; box-shadow: 0 0 12px #000; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">
+    ?
+  </button>
   <button onclick="window.location.href='https://perceptual-app-beta-1.vercel.app'"
     style="
       position: fixed;
@@ -397,7 +585,93 @@
     ">
     ⬅ Back to Main Site
   </button>
-  <div class="container" id="home">
+  <button id="signOutBtn" onclick="signOut()" style="
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 9999;
+    padding: 8px 14px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    display: none;
+  ">
+    Sign Out
+  </button>
+  <div class="container" id="authContainer">
+    <h2 style="text-align:center; color:white;">Sign in to your account</h2>
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label for="authUsername">Username:</label>
+        <input type="text" id="authUsername" placeholder="Enter username" style="width:95%; padding:10px; font-size: 1.1em;" />
+        <label for="authPassword">Password:</label>
+        <input type="password" id="authPassword" placeholder="Enter password" style="width:95%; padding:10px; font-size: 1.1em;" />
+      </div>
+      <div class="form-group" style="display: flex; justify-content: space-around; margin-top: 15px;">
+        <button type="button" onclick="showRegister()" style="background-color:#1E90FF;">Register</button>
+        <button type="button" id="login-btn" onclick="loginUser()" style="background-color:#28a745;">Login</button>
+      </div>
+      <div id="loginErrorMessage" style="display: none; color: red; margin-top: 10px;"></div>
+    </form>
+  </div>
+
+  <div class="container">
+    <div id="registerPage" style="display:none;">
+      <h2>Create an Account</h2>
+      <label for="regName">Name:</label>
+      <input type="text" id="regName" placeholder="Your Name">
+      <label for="regUsername">Username:</label>
+      <input type="text" id="regUsername" placeholder="Choose a username">
+      <label for="regPassword">Password:</label>
+      <input type="password" id="regPassword" placeholder="Create password">
+      <button onclick="submitRegistration()">Submit</button>
+      <a href="#" onclick="showLogin()">Back to Login</a>
+    </div>
+  </div>
+  <script>
+    function showRegister() {
+      document.getElementById('authContainer').style.display = 'none';
+      document.getElementById('registerPage').style.display = 'block';
+    }
+
+    function showLogin() {
+      document.getElementById('registerPage').style.display = 'none';
+      document.getElementById('authContainer').style.display = 'block';
+    }
+
+    function submitRegistration() {
+      const name = document.getElementById('regName').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+
+      if (!name || !username || !password) {
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      db.collection("users").doc(username).get().then(doc => {
+        if (doc.exists) {
+          alert("Username already exists. Please choose a different one.");
+        } else {
+          db.collection("users").doc(username).set({
+            name: name,
+            password: password,
+            createdAt: new Date().toLocaleString(),
+            sessionCount: 0
+          }).then(() => {
+            alert("Account created successfully! Redirecting to login...");
+            document.getElementById('registerPage').style.display = 'none';
+            document.getElementById('authContainer').style.display = 'block';
+          });
+        }
+      });
+    }
+
+  </script>
+  <div class="container" id="home" style="display:none; background-color: rgba(0, 0, 0, 0.592); border-radius: 12px; padding: 20px;">
     <h1>🌴 Sensory Safari 🌴</h1>
     <div class="form-group">
       <label for="numTries">Number of Tries:</label>
@@ -405,32 +679,28 @@
       <span id="numTriesValue">5</span>
     </div>
     <div class="form-group">
-      <label for="difficulty">Choose Difficulty:</label>
-      <select id="difficulty" style="width: 100%; padding: 10px; font-size: 1em; background-color: #fff; color: #000;">
-        <option value="">Select Difficulty</option>
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-        <option value="veryHard">Very Hard</option>
-        <option value="adaptive">Adaptive</option>
-      </select>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <label for="difficultySlider" style="font-weight: bold;">Choose Difficulty:</label>
+        <span id="difficultyLabel" style="font-size: 1.2em; font-weight: bold; color: #007BFF;">Medium</span>
+      </div>
+      <input type="range" id="difficultySlider" min="0" max="4" value="1" style="accent-color: #007BFF;" />
     </div>
     <div class="form-group">
       <label>Choose Your Animal:</label>
-      <div class="animal-options" id="animalList" style="overflow-x: scroll; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
-        <div class="animal-option" data-animal="turtle" style="scroll-snap-align: center;">
+      <div class="animal-options" id="animalList">
+        <div class="animal-option" data-animal="turtle">
           <img src="Images/Turtle/turtle.jpeg" alt="Turtle" id="turtleImg" onmouseover="this.src='Images/Turtle/turtle.jpeg'" onmouseout="this.src='Images/Turtle/turtle.jpeg'" />
           <div>Turtle</div>
         </div>
-        <div class="animal-option" data-animal="cat" style="scroll-snap-align: center;">
+        <div class="animal-option" data-animal="cat">
           <img src="Images/Cat/cat.jpeg" alt="Cat" id="catImg" onmouseover="this.src='Images/Cat/cat.jpeg'" onmouseout="this.src='Images/Cat/cat.jpeg'" />
           <div>Cat</div>
         </div>
-        <div class="animal-option" data-animal="owl" style="scroll-snap-align: center;">
+        <div class="animal-option" data-animal="owl">
           <img src="Images/Owl/owl_on_branch.jpeg" alt="Owl" id="owlImg" onmouseover="this.src='Images/Owl/owl_on_branch.jpeg'" onmouseout="this.src='Images/Owl/owl_on_branch.jpeg'" />
-          <div>Elephant</div>
+          <div>Owl</div>
         </div>
-        <div class="animal-option" data-animal="monkey" style="scroll-snap-align: center;">
+        <div class="animal-option" data-animal="monkey">
           <img src="Images/Monkey/monkey_before_swing.jpeg" alt="Monkey" id="monkeyImg" onmouseover="this.src='Images/Monkey/monkey_before_swing.jpeg'" onmouseout="this.src='Images/Monkey/monkey_before_swing.jpeg'" />
           <div>Monkey</div>
         </div>
@@ -438,8 +708,8 @@
     </div>
     <div class="form-group">
       <label for="stimDuration">Stimulus Duration (sec):</label>
-      <input type="range" id="stimDuration" min="1" max="10" value="5" />
-      <span id="stimDurationValue">5</span>
+      <input type="range" id="stimDuration" min="1" max="10" value="3" />
+      <span id="stimDurationValue">3</span>
     </div>
     <div class="form-group">
       <label for="outcomeDuration">Outcome Duration (sec):</label>
@@ -454,6 +724,8 @@
     <button onclick="startGame()">Go!</button>
   </div>
 
+  <div id="gameContainer" style="position: relative;">
+  </div>
   <div id="countdown">
     <h2>Get Ready...</h2>
     <p id="countdownTimer">3</p>
@@ -463,11 +735,11 @@
     <h2>Task <span id="taskNum">1</span></h2>
     <div style="display: flex; align-items: stretch; justify-content: center; height: 600px;">
       <div style="flex-shrink: 0; display: flex; align-items: center;">
-        <button onclick="handleResponse('ArrowLeft')" style="height: 100%; width: 60px; font-size: 2em; background-color: #88b3a8; color: white; border: none; border-radius: 10px;">←</button>
+        <button onclick="handleResponse('P')" style="height: 100%; width: 100px; font-size: 3em; background-color: #005f73; color: #ffffff; border: 3px solid #ffffff; border-radius: 12px; box-shadow: 0 0 15px #000;">⬅</button>
       </div>
       <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.6); border-radius: 10px;"></div>
       <div style="flex-shrink: 0; display: flex; align-items: center;">
-        <button onclick="handleResponse('ArrowRight')" style="height: 100%; width: 60px; font-size: 2em; background-color: #b0a3c2; color: white; border: none; border-radius: 10px;">→</button>
+        <button onclick="handleResponse('Q')" style="height: 100%; width: 100px; font-size: 3em; background-color: #6a4c93; color: #ffffff; border: 3px solid #ffffff; border-radius: 12px; box-shadow: 0 0 15px #000;">➡</button>
       </div>
     </div>
     <p id="score" style="color: #FFD700; font-size: 2em; text-shadow: 2px 2px 5px #000;">Score: 0</p>
@@ -483,35 +755,62 @@
   <div id="gameOver">
     <h2 style="color: white; font-size: 2.5em; text-shadow: 2px 2px 5px #000;">All Done!</h2>
     <p id="finalScore" style="color: #FFD700; font-size: 2em; font-weight: bold; text-shadow: 2px 2px 5px #000;">Score: 0 / 0</p>
-    <button onclick="location.reload()" style="background-color: #28a745; font-size: 1.5em;">Restart</button>
+    <button onclick="resetGameAndStart()" style="background-color: #28a745; font-size: 1.5em;">Restart</button>
     <button onclick="showFeedbackForm()" style="background-color: #1E90FF; font-size: 1.2em; margin-top: 10px;">Submit Feedback</button>
-  </div>  
+    <button onclick="viewOverallResults()" style="background-color: orange; font-size: 1.2em; margin-top: 10px; color: white; padding: 10px 25px; border-radius: 10px; border: none; cursor: pointer;">
+      Overall Results
+    </button>
+  </div>
 
-  <div id="chartContainer" style="display: none; text-align: center; margin-top: 30px; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">
+
+  <div id="overallResultsPage" class="container" style="display: none; background-color: rgba(255,255,255,0.95); border-radius: 12px; padding: 30px; position: relative; z-index: 1000;">
+    <h2 style="color: black; text-align: center;">📊 Overall Session History</h2>
+    <canvas id="overallResultsChart" style="max-width: 800px; width: 100%; margin: 20px auto; height: 400px;"></canvas>
+    <div id="sessionDetails" style="margin-top: 30px; overflow-x: auto;">
+      <h3 style="color: black; text-align: center;">📄 Session Summary Table</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.95em; background-color: #fff; color: #000;">
+        <thead>
+          <tr style="background-color: #f2f2f2;">
+            <th style="border: 1px solid #ccc; padding: 8px;">Session</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Difficulty</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Correct</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Trials</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Stim Duration</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Outcome Duration</th>
+          </tr>
+        </thead>
+        <tbody id="sessionDetailsBody"></tbody>
+      </table>
+    </div>
+    <button onclick="returnToEndScreen()" style="display: block; margin: 20px auto; background-color: #1E90FF; color: white; padding: 10px 25px; border-radius: 10px; border: none; font-size: 1.1em;">
+      Back
+    </button>
+  </div>
+
+  <div id="chartContainer" style="display: none; text-align: center; margin-top: 30px; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); width: 100%; max-width: 100%;">
     <h2 style="color: black;">Trial Results</h2>
-    <canvas id="noDistractorChart" style="max-width: 600px; margin: 20px auto;"></canvas>
-    <canvas id="auditoryDistractorChart" style="max-width: 600px; margin: 20px auto;"></canvas>
-    <canvas id="visualDistractorChart" style="max-width: 600px; margin: 20px auto;"></canvas>
+    <canvas id="noDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
+    <canvas id="auditoryDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
+    <canvas id="visualDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
   </div>
 
   <script>
-    window.lightsEnabled = false;
     let responseTimeout;
-    // --- Blinking background variables ---
     let backgroundCycleInterval = null;
-    let currentBackgroundIndex = 0;
-    const backgroundImages = [
-      'Images/Background_1.jpeg',
-      'Images/Background_2.jpeg',
-      'Images/Background_3.jpeg'
-    ];
     let visualCountdownInterval = null;
+    let currentBackgroundIndex = 0;
     let isQuitting = false;
     // Add global timer handles for countdown and trial
     let countdownInterval;
     // let trialTimeout; // No longer needed; remove all uses below.
     // Global tracker for finished animal animations
     let animalsFinished = 0;
+    // Global interval handle for continuous animal spawning
+    let spawnInterval = null;
+    // Track how many animals are currently on‑screen
+    let activeAnimals = 0;
+    // Flag so we don't start multiple countdowns
+    let countdownStarted = false;
     const backgrounds = [
       'Images/Background_1.jpeg',
       'Images/Background_2.jpeg',
@@ -540,21 +839,12 @@
       input.addEventListener('input', () => span.textContent = input.value);
     });
 
-    // Attach animal selection logic after DOM fully rendered to avoid race conditions
-    setTimeout(() => {
-      const container = document.getElementById('animalList');
-      if (!container) return;
-
-      container.addEventListener('click', (e) => {
-        const selectedEl = e.target.closest('.animal-option');
-        if (!selectedEl || !container.contains(selectedEl)) return;
-
+    document.querySelectorAll('.animal-option').forEach(el => {
+      el.addEventListener('click', () => {
         document.querySelectorAll('.animal-option').forEach(opt => opt.classList.remove('selected'));
-        selectedEl.classList.add('selected');
-        selectedAnimal = selectedEl.getAttribute('data-animal');
-        console.log('Animal selected:', selectedAnimal);
+        el.classList.add('selected');
+        selectedAnimal = el.getAttribute('data-animal');
       });
-<<<<<<< HEAD
     });
 
     // Difficulty slider mapping and label updater with dynamic color
@@ -626,9 +916,6 @@
     }
 
     function loginUser() {
-      const loginButton = document.getElementById("login-btn");
-      loginButton.disabled = true;
-      loginButton.textContent = "Logging in...";
       const username = document.getElementById('authUsername').value.trim();
       const password = document.getElementById('authPassword').value;
       const errorMessage = document.getElementById("loginErrorMessage");
@@ -642,8 +929,6 @@
           errorMessage.style.display = "block";
           errorMessage.textContent = "Please enter your username and password.";
         }
-        loginButton.disabled = false;
-        loginButton.textContent = "Login";
         return;
       }
       db.collection("users").doc(username).get().then(doc => {
@@ -656,8 +941,6 @@
             loggedInUser = username;
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('home').style.display = 'block';
-            loginButton.disabled = false;
-            loginButton.textContent = "Login";
             // Show sign out button after login
             document.getElementById("signOutBtn").style.display = "block";
             if (errorMessage) {
@@ -670,8 +953,6 @@
               errorMessage.style.display = "block";
               errorMessage.textContent = "Incorrect username or password. Please try again.";
             }
-            loginButton.disabled = false;
-            loginButton.textContent = "Login";
           }
         } else {
           // Show error message for non-existent user
@@ -679,36 +960,13 @@
             errorMessage.style.display = "block";
             errorMessage.textContent = "Incorrect username or password. Please try again.";
           }
-          loginButton.disabled = false;
-          loginButton.textContent = "Login";
         }
-      }).catch(() => {
-        loginButton.disabled = false;
-        loginButton.textContent = "Login";
       });
     }
-  // --------- IMAGE PRELOADING ---------
-  // Preload all key images to reduce lag
-  const preloadImages = [
-    'Images/Background.jpeg',
-    'Images/Background_1.jpeg',
-    'Images/Background_2.jpeg',
-    'Images/Background_3.jpeg',
-    'Images/Cat/cat.jpeg',
-    'Images/Owl/owl_on_branch.jpeg',
-    'Images/Turtle/turtle.jpeg',
-    'Images/Monkey/monkey_before_swing.jpeg'
-  ];
-  preloadImages.forEach(src => {
-    const img = new Image();
-    img.src = src;
-  });
-=======
-    }, 100);
->>>>>>> parent of cfae45a (Version 6)
 
     function startGame() {
-      const selectedDifficulty = document.getElementById('difficulty').value;
+      const playerNameInput = loggedInUser;
+      const selectedDifficulty = difficultyLevelsMap[+document.getElementById('difficultySlider').value];
       if (!selectedDifficulty) {
         alert("Please select a difficulty level.");
         return;
@@ -723,7 +981,8 @@
         outcomeDuration: +document.getElementById('outcomeDuration').value,
         soundOn: document.getElementById('soundToggleBtn').classList.contains('active'),
         difficulty: selectedDifficulty,
-        animal: selectedAnimal
+        animal: selectedAnimal,
+        playerName: playerNameInput
       };
       tries = selections.numTries;
       // Step 2: Store for final score display
@@ -771,9 +1030,23 @@
       console.log('Correct Answer:', window.correctAnswer);
       clearInterval(visualCountdownInterval);
 
-      // Map arrow keys to P/Q for backend logic
-      if (key === 'ArrowLeft') key = 'P';
-      if (key === 'ArrowRight') key = 'Q';
+      // Pause all animal animations
+      document.querySelectorAll('.moving-animal').forEach(animal => {
+        animal.style.animationPlayState = 'paused';
+      });
+      // Remove all animals from the wave container so the screen is clean for feedback
+      const waveContainer = document.getElementById('wave-container');
+      if (waveContainer) {
+        waveContainer.innerHTML = '';
+      }
+      // Stop any further animal spawns
+      if (spawnInterval) {
+        clearInterval(spawnInterval);
+        spawnInterval = null;
+      }
+      // Reset animal trackers
+      activeAnimals = 0;
+      countdownStarted = false;
 
       const lastTrial = trialResults[trialResults.length - 1];
       let isCorrect = false;
@@ -801,13 +1074,6 @@
       }
 
       adjustDifficulty(); // Adjust difficulty dynamically
-
-      // Stop all animal animations immediately upon user response
-      const animals = document.querySelectorAll('.moving-animal');
-      animals.forEach(animal => {
-        animal.style.animation = 'none';
-      });
-
       showFeedbackImage(isCorrect); // Show feedback image after response
     }
 
@@ -876,6 +1142,9 @@
     function runTask() {
       if (isQuitting) return;
       window.responseGiven = false;
+      // Reset animal trackers at the start of each trial
+      activeAnimals = 0;
+      countdownStarted = false;
       if (currentTry >= tries) {
         if (selections.soundOn) {
           beepAudio.pause();
@@ -884,7 +1153,6 @@
         document.getElementById('test').style.display = 'none';
         document.getElementById('gameOver').style.display = 'block';
         displayResultsChart(); // Display results chart at the end
-        saveSessionToFirestore(); // Now uses window.playerInfo.name as document ID
         
         // Map variables to new naming
         const correctGuessRight    = window.correctRight   || 0;
@@ -951,6 +1219,10 @@
         document.getElementById('finalScore').textContent =
           `Score: ${totalCorrect} / ${totalTries} | Metric: ${dprime1}`;
         console.log("Distractor Log:", distractorLog); // Log distractor usage at the end
+
+        // --- Firebase Firestore session logging ---
+        logSessionToFirestore(selections.playerName);
+        // --- End Firebase Firestore session logging ---
         return;
       }
 
@@ -974,17 +1246,33 @@
         veryHard: direction === 'Forward' ? 'veryHardMoveMultiple' : 'veryHardMoveMultipleReverse'
       }[usedDifficulty];
 
-      // Use angle mapping in degrees string for transform
-      const angleMapping = {
-        easy: '0deg',          // no tilt for Easy mode
-        medium: '-22.5deg',
-        hard: '-9.5deg',
-        veryHard: '-5deg'
+      // --- Tilt Angle Mapping by Difficulty ---
+      // Standard difficulty-to-angle mapping (degrees)
+      const difficultyAngles = {
+        easy: 0,
+        medium: 15,
+        hard: 30,
+        veryHard: 45
       };
-      // Map usedDifficulty to correct spelling for mapping
-      // name now consistent with difficultyLevels
-      const difficultyKey = usedDifficulty; // name now consistent with difficultyLevels
-      const rotationAngle = angleMapping[difficultyKey];
+      // For adaptive mode: track current adaptive level (0=easy, 1=medium, 2=hard, 3=veryhard)
+      let currentAdaptiveLevel = 1; // default to 'medium'
+      // Map usedDifficulty to adaptive level index if in adaptive mode
+      if (selections.difficulty === "adaptive") {
+        // Map currentDifficulty string to index
+        const adaptiveLevelMap = { easy: 0, medium: 1, hard: 2, veryHard: 3 };
+        currentAdaptiveLevel = adaptiveLevelMap[currentDifficulty] ?? 1;
+      }
+      // Adaptive angles array (degrees)
+      const adaptiveAngles = [0, 15, 30, 45];
+      // Determine the appropriate angle for this trial
+      let angle = 0;
+      if (selections.difficulty === "adaptive") {
+        angle = adaptiveAngles[currentAdaptiveLevel];
+      } else {
+        angle = difficultyAngles[usedDifficulty];
+      }
+      // Log the angle for visual confirmation
+      console.log("Tilt angle applied:", angle);
 
       // Use absolute paths based on your GitHub Pages URL
       const basePath = 'https://kaushikvada3.github.io/Perception_App_Kids_Version/Images';
@@ -995,51 +1283,69 @@
         monkey: `${basePath}/Monkey/monkey_before_swing.jpeg`
       };
 
-      // Calculate animation timing based on stimDuration and number of animals
       const stimDuration = selections.stimDuration * 1000;
-      const baseDuration = stimDuration / 1000; // in seconds
-      const totalAnimals = 5;
-      const stepDelay = baseDuration / totalAnimals;
-      const animDuration = baseDuration * 0.8; // reserve a bit of time for transition
 
-      for (let i = 0; i < 5; i++) {
+      // Fixed spacing (ms between spawns) for all difficulties
+      const spawnGap = 500;  // adjust to taste
+
+      // Helper function to spawn one animal, with animation duration parameter
+      function spawnAnimal(animMs) {
+        activeAnimals++; // one more animal on screen
         const img = document.createElement('img');
-        img.src = animalImageMap[selectedAnimal]; // Use the absolute path
+        img.src = animalImageMap[selectedAnimal];
         img.className = 'moving-animal';
         img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
-        // Shift animals farther off‑screen so no part peeks in before animation starts
+
         img.style.left = direction === 'Forward'
-          ? `${-600 - i * 80}px`                 // start well off the left edge
-          : `calc(120% + ${i * 80}px)`;          // start well off the right edge
+          ? '-600px'
+          : '120%';
+
         img.style.width = '220px';
-        img.style.animation = `${animClass} ${animDuration}s linear ${i * stepDelay}s forwards`;
-        img.style.transform = `rotate(${rotationAngle})`;
-        img.style.zIndex = 5 - i;
+        img.style.animation = `${animClass} ${animMs}ms linear 0ms forwards`;
+        img.style.transform = `rotate(${angle}deg)`;
+        img.style.zIndex = 5;
+
         waveContainer.appendChild(img);
-        // Attach animationend listener to count finished animals
         img.addEventListener('animationend', () => {
-          animalsFinished++;
-          if (animalsFinished === 5) {
-            setTimeout(() => {
-              startResponseCountdown();
-            }, 500); // 500ms pause after animation ends
+          activeAnimals--;
+          // Remove the DOM node so it doesn't accumulate
+          img.remove();
+          if (activeAnimals === 0 && !window.responseGiven && !countdownStarted) {
+            countdownStarted = true;
+            startResponseCountdown();
           }
         });
       }
+
+      // Start spawning immediately, first animal gets full duration
+      spawnAnimal(stimDuration);
+
+      // Keep spawning at regular intervals until stimDuration expires or user responds
+      const taskStart = Date.now();
+      spawnInterval = setInterval(() => {
+        const elapsed = Date.now() - taskStart;
+        const remaining = stimDuration - elapsed;
+
+        if (window.responseGiven || remaining <= 0) {
+          clearInterval(spawnInterval);
+          spawnInterval = null;
+          return;
+        }
+
+        // Spawn an animal whose animation lasts exactly until the stimulus window ends
+        spawnAnimal(stimDuration);
+      }, spawnGap);
 
       console.log(`Trial ${currentTry + 1}: Difficulty = ${usedDifficulty}`);
       window.correctAnswer = direction === 'Forward' ? 'Q' : 'P';
       currentTry++;
 
-      const stimDuration = selections.stimDuration * 1000;
       const lightSoundDuration = stimDuration * 0.6; // 60% of stimulus duration
 
       // Randomly decide whether to activate lights and sounds for this trial
       const activateLightSound = Math.random() > 0.5;
       let distractorType = "none";
 
-      // --- Blinking background for visual distractor on the parent of #wave-container ---
-      const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
       if (activateLightSound) {
         if (selections.soundOn) {
           beepAudio.pause();
@@ -1047,76 +1353,27 @@
           beepAudio.play();
           distractorType = "sound";
         }
-<<<<<<< HEAD
-        if (lightsEnabled) {
-          distractorType = distractorType === "sound" ? "both" : "visual";
-        }
-        // Sound stops after 60% of stimDuration
-        setTimeout(() => {
-          if (selections.soundOn) {
-            beepAudio.pause();
-          }
-        }, lightSoundDuration);
-      }
-      // Only apply blinking background logic if lights are enabled for this trial
-      // --- Blinking background logic now applies to parent of #wave-container ---
-      let blinkInterval = null;
-      if (lightsEnabled) {
-        const waveContainer = document.getElementById('wave-container');
-        const waveParent = waveContainer?.parentNode;
-        if (waveParent) {
-          waveParent.style.backgroundSize = 'cover';
-          waveParent.style.backgroundPosition = 'center';
-          waveParent.style.backgroundRepeat = 'no-repeat';
-          waveParent.style.transition = 'background-image 0.8s ease-in-out';
-          waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
-        }
-        // Blinking/cycling backgrounds on parent container
-        if (waveParent) {
-          currentBackgroundIndex = 0;
-          if (backgroundCycleInterval !== null) {
-            clearInterval(backgroundCycleInterval);
-          }
-          blinkInterval = setInterval(() => {
-            waveParent.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
-            waveParent.style.transition = 'background-image 0.8s ease-in-out';
-            waveParent.style.backgroundSize = 'cover';
-            waveParent.style.backgroundPosition = 'center';
-            waveParent.style.backgroundRepeat = 'no-repeat';
-            currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
-          }, 600);
-          const blinkDuration = selections.stimDuration * 0.6 * 1000;
-          setTimeout(() => {
-            clearInterval(blinkInterval);
-            waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
-          }, blinkDuration);
-=======
 
-        const stimDuration = selections.stimDuration * 1000;
-        const lightStartDelay = stimDuration * 0.6;
-        const lightEndDelay = stimDuration * 0.95;
-
-        if (window.lightsEnabled) {
-          setTimeout(() => {
-            backgroundCycleInterval = setInterval(() => {
-              document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-              currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-            }, 500);
-          }, lightStartDelay);
-
-          setTimeout(() => {
-            clearInterval(backgroundCycleInterval);
-            backgroundCycleInterval = null;
-            document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-          }, lightEndDelay);
-
-          distractorType = distractorType === "sound" ? "both" : "visual";
->>>>>>> parent of cfae45a (Version 6)
-        }
+        if (document.getElementById('lightsToggleBtn').classList.contains('active')) {
+        backgroundCycleInterval = setInterval(() => {
+          document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
+          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
+        }, 500);
+        distractorType = distractorType === "sound" ? "both" : "visual";
       }
 
-      // Log distractor usage for this trial, including difficulty
-      trialResults.push({ type: distractorType, correct: false, difficulty: usedDifficulty });
+      setTimeout(() => {
+        if (selections.soundOn) {
+          beepAudio.pause();
+        }
+        clearInterval(backgroundCycleInterval);
+        backgroundCycleInterval = null;
+        document.body.style.backgroundImage = "url('Images/Background.jpeg')";
+      }, lightSoundDuration); // 66% of stimDuration
+      }
+
+      // Log distractor usage for this trial
+      trialResults.push({ type: distractorType, correct: false });
 
       // No timeout-based countdown trigger needed; countdown starts after last animal's animationend.
       document.getElementById('responseCountdown').textContent = '';
@@ -1178,52 +1435,23 @@
     }
     ------------- END PDF EXPORT DISABLED -------------*/
 
-    function displayResultsChart() {
-      const chartContainer = document.getElementById('chartContainer');
-      document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
-      chartContainer.style.display = 'block'; // Ensure the chart container is visible
+    // --- Firebase Firestore session logging ---
+    function logSessionToFirestore(playerName) {
+      const totalCorrect = trialResults.filter(t => t.correct).length;
+      const formattedTrialDetails = trialResults.map((trial, i) => ({
+        trial: i + 1,
+        correct: trial.correct,
+        type: trial.type
+      }));
 
-      // Group trial results by distractor type and difficulty
-      const groupedResults = { none: {}, sound: {}, visual: {} };
-      trialResults.forEach(trial => {
-        const diff = trial.difficulty || 'unknown';
-        const type = trial.type || 'none';
-        if (!groupedResults[type][diff]) groupedResults[type][diff] = { correct: 0, incorrect: 0 };
-        if (trial.correct) {
-          groupedResults[type][diff].correct++;
-        } else {
-          groupedResults[type][diff].incorrect++;
-        }
-      });
-
-      // Helper function to prepare data for Chart.js by difficulty level
-      function prepareChartDataByDifficulty(groupedData) {
-        const difficultyOrder = ['easy', 'medium', 'hard', 'veryHard', 'unknown'];
-        // Only include present difficulties, sorted in order
-        const presentDiffs = Object.keys(groupedData);
-        const sortedDiffs = difficultyOrder.filter(d => presentDiffs.includes(d))
-          .concat(presentDiffs.filter(d => !difficultyOrder.includes(d)));
-        const labels = [];
-        const correctData = [];
-        const incorrectData = [];
-        sortedDiffs.forEach(diff => {
-          labels.push(diff.charAt(0).toUpperCase() + diff.slice(1));
-          correctData.push(groupedData[diff].correct);
-          incorrectData.push(groupedData[diff].incorrect);
-        });
-        return { labels, correctData, incorrectData };
-      }
-
-      // Prepare data for each chart (bars = difficulty levels)
-      const auditoryDistractorData = prepareChartDataByDifficulty(groupedResults.sound);
-      const visualDistractorData = prepareChartDataByDifficulty(groupedResults.visual);
-
-      // Compute d' and interpretation (copied from runTask() end)
+      // New fields for sessionData
       const correctGuessRight    = window.correctRight   || 0;
       const inCorrectGuessRight  = window.incorrectRight || 0;
       const correctGuessLeft     = window.correctLeft    || 0;
       const inCorrectGuessLeft   = window.incorrectLeft  || 0;
       const missedGuess          = (window.noResponseRight || 0) + (window.noResponseLeft || 0);
+
+      // Compute FracHit and FracCR per new formula
       let fractHit = 0, fractCR = 0;
       if (correctGuessRight + inCorrectGuessRight + missedGuess / 2 !== 0) {
         fractHit = correctGuessRight / (correctGuessRight + inCorrectGuessRight + missedGuess / 2);
@@ -1231,6 +1459,7 @@
       if (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2 !== 0) {
         fractCR = inCorrectGuessLeft / (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2);
       }
+
       function norminv(p) {
         if (p === 0) {
           p = 0.1;
@@ -1241,116 +1470,82 @@
         const a4 = 138.357751867269;
         const a5 = -30.66479806614716;
         const a6 = 2.506628277459239;
+
         const t = 1.0 / (1.0 + 0.2316419 * Math.abs(p));
         const d = 0.3989422804014337 * Math.exp(-p * p / 2.0);
         const x = ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t;
         return 1 - d * x;
       }
+
       const dp1 = norminv(fractHit);
       const dp2 = norminv(fractCR);
       const dprime1 = (dp1 - dp2).toFixed(3);
-      // Compute d′-based interpretation message
-      let dPrimeInterpretation = '';
-      if (dprime1 > 1.5) {
-        dPrimeInterpretation = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
-      } else if (dprime1 > 0.5) {
-        dPrimeInterpretation = 'Moderate sensory recognition. Performance is above average.';
-      } else if (dprime1 > 0) {
-        dPrimeInterpretation = 'Slightly better than guessing. May suggest some perceptual difficulty.';
-      } else if (dprime1 == 0) {
-        dPrimeInterpretation = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
-      } else {
-        dPrimeInterpretation = 'Performance is below chance. May suggest difficulty with sensory perception.';
-      }
 
-      // Build difficulty-based dataset for all trials (bars = difficulty levels)
-      const difficultyGroups = {};
-      trialResults.forEach(trial => {
-        const level = trial.difficulty || 'unknown';
-        if (!difficultyGroups[level]) {
-          difficultyGroups[level] = { correct: 0, incorrect: 0 };
-        }
-        if (trial.correct) {
-          difficultyGroups[level].correct++;
-        } else {
-          difficultyGroups[level].incorrect++;
-        }
-      });
-      // Sort difficulty labels in order for consistent bar order
-      const difficultyOrder = ['easy', 'medium', 'hard', 'veryHard', 'unknown'];
-      const difficultyLabels = Object.keys(difficultyGroups)
-        .sort((a, b) => difficultyOrder.indexOf(a) - difficultyOrder.indexOf(b));
-      const correctData = [];
-      const incorrectData = [];
-      difficultyLabels.forEach(level => {
-        correctData.push(difficultyGroups[level].correct);
-        incorrectData.push(difficultyGroups[level].incorrect);
-      });
-      const difficultyData = {
-        labels: difficultyLabels.map(label => label.charAt(0).toUpperCase() + label.slice(1)),
-        correctData,
-        incorrectData
+      const sessionData = {
+        playerName: loggedInUser,
+        timestamp: new Date().toLocaleString(),
+        difficulty: selections.difficulty,
+        stimulusDuration: selections.stimDuration,
+        outcomeDuration: selections.outcomeDuration,
+        numTrials: selections.numTries,
+        score: `${totalCorrect} / ${selections.numTries}`,
+        trialDetails: formattedTrialDetails,
+        // New fields:
+        correctGuessRight: correctGuessRight,
+        inCorrectGuessRight: inCorrectGuessRight,
+        correctGuessLeft: correctGuessLeft,
+        inCorrectGuessLeft: inCorrectGuessLeft,
+        missedGuess: missedGuess,
+        metricScore: dprime1
       };
 
-      // Only render charts if there is at least one valid trial for each type
-      const hasAuditoryData =
-        auditoryDistractorData.correctData.some(v => v > 0) ||
-        auditoryDistractorData.incorrectData.some(v => v > 0);
-      const hasVisualData =
-        visualDistractorData.correctData.some(v => v > 0) ||
-        visualDistractorData.incorrectData.some(v => v > 0);
-      const hasNoDistractorData =
-        trialResults.filter(tr => tr.type === 'none').length > 0;
+      const userRef = db.collection("users").doc(loggedInUser);
 
-<<<<<<< HEAD
-      // Group trial results by distractor type and in chunks of 5
-      const groupedResults = { none: [], sound: [], visual: [] };
-      trialResults.forEach((trial, index) => {
-        const groupKey = Math.floor(index / 5);
-        const type = trial.type || 'none';
-        if (!groupedResults[type][groupKey]) {
-          groupedResults[type][groupKey] = { correct: 0, incorrect: 0 };
+      userRef.get().then(doc => {
+        if (doc.exists) {
+          const currentCount = doc.data().sessionCount || 0;
+          const newCount = currentCount + 1;
+          const trialName = `Trial #${newCount}`;
+
+          userRef.collection("sessions").doc(trialName).set(sessionData).then(() => {
+            console.log("Session stored as:", trialName);
+            userRef.update({ sessionCount: newCount }); // ✅ Update counter
+          }).catch(err => console.error("🔥 Firestore error:", err));
         }
+      });
+    }
+    // --- End Firebase Firestore session logging ---
+
+    function displayResultsChart() {
+      const chartContainer = document.getElementById('chartContainer');
+      document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
+      chartContainer.style.display = 'block'; // Ensure the chart container is visible
+
+      const groupedResults = trialResults.reduce((acc, trial, index) => {
+        const groupKey = Math.floor(index / 5); // Group trials into chunks of 5
+        acc[trial.type] = acc[trial.type] || [];
+        if (!acc[trial.type][groupKey]) acc[trial.type][groupKey] = { correct: 0, incorrect: 0 };
         if (trial.correct) {
-          groupedResults[type][groupKey].correct++;
+          acc[trial.type][groupKey].correct++;
         } else {
-          groupedResults[type][groupKey].incorrect++;
+          acc[trial.type][groupKey].incorrect++;
         }
-      });
-
-      // Check which distractor types are present in trialResults using Array.some()
-      const hasNone = trialResults.some(tr => tr.type === 'none');
-      const hasSound = trialResults.some(tr => tr.type === 'sound');
-      const hasVisual = trialResults.some(tr => tr.type === 'visual');
-
-      // Hide canvases for types not played, show for those played
-      document.getElementById('noDistractorChart').style.display = hasNone ? 'block' : 'none';
-      document.getElementById('auditoryDistractorChart').style.display = hasSound ? 'block' : 'none';
-      document.getElementById('visualDistractorChart').style.display = hasVisual ? 'block' : 'none';
-
-      // Remove old interpretations/arrows before rendering new ones
-      ['noDistractorChart', 'auditoryDistractorChart', 'visualDistractorChart'].forEach(id => {
-        // Remove all elements with id=`${id}-interp` and the next sibling if it's a blue arrow
-        let interp = document.getElementById(`${id}-interp`);
-        while (interp) {
-          const next = interp.nextSibling;
-          interp.remove();
-          if (next && next.tagName === 'P' && next.textContent && next.textContent.includes('Increasing Difficulty')) {
-            next.remove();
-          }
-          interp = document.getElementById(`${id}-interp`);
-        }
-      });
+        return acc;
+      }, { none: [], sound: [], visual: [] });
 
       // Pass difficulty mode to prepareChartData
-      const difficultyMode = selections.difficulty;
+      const difficultyMode = selections.difficulty; // "easy", "medium", ..., or "adaptive"
+
+      // Helper function to prepare data for Chart.js, now takes difficultyMode
       function prepareChartData(groupedData, difficultyMode) {
         const labels = [];
         const correctData = [];
         const incorrectData = [];
+
         groupedData.forEach((group, index) => {
           let label;
           if (difficultyMode === 'adaptive') {
+            // Adaptive: cycle through Easy, Medium, Hard, Very Hard
             const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][index % 4];
             label = `${difficultyGroup} #${Math.floor(index / 4) + 1}`;
           } else {
@@ -1360,106 +1555,62 @@
           correctData.push(group.correct);
           incorrectData.push(group.incorrect);
         });
+
         return { labels, correctData, incorrectData };
       }
+
+      // Prepare data for each chart, pass difficulty
       const noDistractorData = prepareChartData(groupedResults.none, selections.difficulty);
       const auditoryDistractorData = prepareChartData(groupedResults.sound, selections.difficulty);
       const visualDistractorData = prepareChartData(groupedResults.visual, selections.difficulty);
 
-      // Only render charts for distractor types that were played
-      if (hasNone) {
-        renderChart('noDistractorChart', 'No Distractors', noDistractorData, 'Sensory Threshold (2)');
-      }
-      if (hasSound) {
-        renderChart('auditoryDistractorChart', 'Auditory Distractors', auditoryDistractorData, 'Attention Threshold (2)');
-      }
-      if (hasVisual) {
-        renderChart('visualDistractorChart', 'Visual Distractors', visualDistractorData, 'Attention Threshold (2)');
-      }
-    }
-
-    function renderChart(canvasId, title, data, thresholdLabel) {
-      // Remove old interpretation and arrow if present (done by displayResultsChart, but in case of rerender)
-      let interp = document.getElementById(`${canvasId}-interp`);
-      while (interp) {
-        const next = interp.nextSibling;
-        interp.remove();
-        if (next && next.tagName === 'P' && next.textContent && next.textContent.includes('Increasing Difficulty')) {
-          next.remove();
-        }
-        interp = document.getElementById(`${canvasId}-interp`);
+      // Render charts conditionally based on distractor type usage
+      if (groupedResults.none.length > 0) {
+        renderChart('noDistractorChart',
+                    'No Distractors',
+                    noDistractorData,
+                    'Sensory Threshold (2)');
+      } else {
+        document.getElementById('noDistractorChart').style.display = 'none';
       }
 
-      // Calculate total correct and determine interpretation (consistent mapping)
-      const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
-      let interpretationText = "";
-      let interpColor = "green";
-      if (canvasId === 'noDistractorChart') {
-        if (totalCorrect > 2) {
-          interpretationText = "Good sensory function";
-          interpColor = "green";
-        } else {
-          interpretationText = "Poor sensory function";
-          interpColor = "red";
-        }
-      } else if (canvasId === 'auditoryDistractorChart') {
-        if (totalCorrect > 2) {
-          interpretationText = "No attentional issues";
-          interpColor = "green";
-        } else {
-          interpretationText = "Sound-related attentional issues";
-          interpColor = "red";
-        }
-      } else if (canvasId === 'visualDistractorChart') {
-        if (totalCorrect > 2) {
-          interpretationText = "No attentional issues";
-          interpColor = "green";
-        } else {
-          interpretationText = "Visual-related attentional issues";
-          interpColor = "red";
-        }
-      }
-=======
-      if (hasAuditoryData) {
-        renderChart(
-          'auditoryDistractorChart',
-          'Auditory Distractors (by Difficulty)',
-          auditoryDistractorData,
-          'Difficulty Level',
-          dPrimeInterpretation
-        );
+      if (groupedResults.sound.length > 0) {
+        renderChart('auditoryDistractorChart',
+                    'Auditory Distractors',
+                    auditoryDistractorData,
+                    'Attention Threshold (2)');
+      } else {
+        document.getElementById('auditoryDistractorChart').style.display = 'none';
       }
 
-      if (hasVisualData) {
-        renderChart(
-          'visualDistractorChart',
-          'Visual Distractors (by Difficulty)',
-          visualDistractorData,
-          'Difficulty Level',
-          dPrimeInterpretation
-        );
+      if (groupedResults.visual.length > 0) {
+        renderChart('visualDistractorChart',
+                    'Visual Distractors',
+                    visualDistractorData,
+                    'Attention Threshold (2)');
+      } else {
+        document.getElementById('visualDistractorChart').style.display = 'none';
       }
 
-      // Render difficulty-based bar chart only if at least one distractor type has data or there are no-distractor trials
-      if (
-        difficultyLabels.length > 0 &&
-        (hasAuditoryData || hasVisualData || hasNoDistractorData)
-      ) {
-        // Use actual unique difficulties from trialResults for xAxisLabel
-        const uniqueDifficulties = new Set(trialResults.map(tr => tr.difficulty));
-        const xAxisLabel = uniqueDifficulties.size === 1
-          ? Array.from(uniqueDifficulties)[0].charAt(0).toUpperCase() + Array.from(uniqueDifficulties)[0].slice(1) + ' Difficulty'
-          : 'Increasing Difficulty';
-        renderChart('noDistractorChart', xAxisLabel, difficultyData, 'Performance Overview', dPrimeInterpretation);
-      }
       // exportResultsToPDF(); // (PDF download temporarily disabled)
     }
 
-    function renderChart(canvasId, title, data, thresholdLabel, interpretationText) {
+    function renderChart(canvasId, title, data, thresholdLabel) {
+      // Calculate total correct and determine interpretation
+      const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
+      const interpretationText = totalCorrect > 2
+          ? (canvasId === 'noDistractorChart'
+              ? 'Good Sensory function'
+              : 'No attentional issues')
+          : (canvasId === 'noDistractorChart'
+              ? 'Poor sensory function'
+              : (canvasId === 'auditoryDistractorChart'
+                  ? 'Attentional issues in the presence of lights'
+                  : 'Sound‑related attentional issues'));
+
       // Remove old interpretation paragraph if present
       const oldP = document.querySelector(`#${canvasId}-interp`);
       if (oldP) oldP.remove();
->>>>>>> parent of cfae45a (Version 6)
 
       const ctx = document.getElementById(canvasId).getContext('2d');
       new Chart(ctx, {
@@ -1488,7 +1639,7 @@
           plugins: {
             title: {
               display: true,
-              text: title,
+              text: `${title} (${selections.difficulty === 'adaptive' ? 'Increasing Difficulty' : selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1)})`,
               font: { size: 18 },
             },
             annotation: {
@@ -1511,49 +1662,26 @@
         },
       });
 
-<<<<<<< HEAD
-      // Add interpretation text and arrow below the chart canvas
-      const canvasEl = document.getElementById(canvasId);
-      const interpP = document.createElement('p');
-      interpP.id = `${canvasId}-interp`;
-      interpP.style.color = interpColor;
-      interpP.style.fontWeight = 'bold';
-      interpP.style.marginTop = "10px";
-      interpP.style.marginBottom = "8px";
-      interpP.textContent = interpretationText;
-
-      // Arrow label below interpretation
-      const arrow = document.createElement('p');
-      arrow.style.color = 'blue';
-      arrow.style.fontSize = '0.95em';
-      arrow.style.marginTop = '2px';
-      arrow.style.marginBottom = '18px';
-      arrow.textContent = 'Increasing Difficulty →';
-
-      // Place interp and arrow directly after the canvas (interp below chart, arrow below interp)
-      canvasEl.parentNode.insertBefore(interpP, canvasEl.nextSibling);
-      canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
-=======
-      // Add interpretation text below the chart
+      // Add interpretation text and arrow below the chart container
       const canvasEl = document.getElementById(canvasId);
       const interp = document.createElement('p');
       interp.id = `${canvasId}-interp`;
-      interp.style.color = 'navy';
+      interp.style.color = (interpretationText.includes('Sound') ? 'red' : 'green');
       interp.style.fontWeight = 'bold';
       interp.textContent = interpretationText;
-      canvasEl.parentNode.insertBefore(interp, canvasEl.nextSibling);
 
-      // Arrow label: only show if more than one data label
-      if (data.labels.length > 1) {
-        const arrow = document.createElement('p');
-        arrow.style.color = 'navy';
-        arrow.style.fontSize = '0.9em';
-        arrow.style.marginTop = '-5px';
-        arrow.style.marginBottom = '15px';
-        arrow.textContent = 'Increasing Difficulty →';
-        canvasEl.parentNode.insertBefore(arrow, interp.nextSibling);
-      }
->>>>>>> parent of cfae45a (Version 6)
+      // Arrow label
+      const arrow = document.createElement('p');
+      arrow.style.color = 'navy';
+      arrow.style.fontSize = '0.9em';
+      arrow.style.marginTop = '-5px';
+      arrow.style.marginBottom = '15px';
+      arrow.textContent = 'Increasing Difficulty →';
+
+      // Place both interp and arrow at the bottom of the chart container
+      const container = canvasEl.parentNode;
+      container.appendChild(interp);
+      container.appendChild(arrow);
     }
 
     function toggleSound() {
@@ -1578,55 +1706,28 @@
       // Here you can collect form data and send it to a server or database.
     }
     function toggleLights() {
-      const btn = document.getElementById('lightsToggleBtn');
-      btn.classList.toggle('active');
-<<<<<<< HEAD
-      if (btn.classList.contains('active')) {
-        btn.textContent = 'Lights On';
-        // Do not start blinking here; blinking is handled at trial start.
-      } else {
-        btn.textContent = 'Lights Off?';
-        // If blinking is active, stop immediately and reset to static background image
-        if (backgroundCycleInterval !== null) {
-          clearInterval(backgroundCycleInterval);
-          backgroundCycleInterval = null;
-          currentBackgroundIndex = 0;
-          const waveContainer = document.getElementById('wave-container');
-          if (waveContainer) {
-            waveContainer.style.backgroundImage = "url('Images/Background.jpeg')";
-          }
-        }
-        // Optionally reset body background if you want, but not needed for #wave-container logic
-=======
+    const btn = document.getElementById('lightsToggleBtn');
+    btn.classList.toggle('active');
 
-      if (btn.classList.contains('active')) {
-        btn.textContent = 'Lights On';
-        window.lightsEnabled = true; // Store state without triggering blinking
-      } else {
-        btn.textContent = 'Lights Off?';
-        window.lightsEnabled = false;
-        clearInterval(backgroundCycleInterval);
-        backgroundCycleInterval = null;
-        currentBackgroundIndex = 0;
-        document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'top left';
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundAttachment = 'fixed';
->>>>>>> parent of cfae45a (Version 6)
-      }
+    if (btn.classList.contains('active')) {
+      btn.textContent = 'Lights On';
+      // ⚠️ DO NOT start blinking here
+    } else {
+      btn.textContent = 'Lights Off?';
+      clearInterval(backgroundCycleInterval);
+      backgroundCycleInterval = null;
+      currentBackgroundIndex = 0;
+      document.body.style.backgroundImage = "url('Images/Background.jpeg')";
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'top left';
+      document.body.style.backgroundRepeat = 'no-repeat';
+      document.body.style.backgroundAttachment = 'fixed';
     }
+}
 
     function quitGame() {
-      // Hide the test/game over screens, show the home screen
-      isQuitting = true;
-      document.getElementById('test').style.display = 'none';
-      document.getElementById('gameOver').style.display = 'none';
-      document.getElementById('home').style.display = 'block';
-      // Optionally reset game state (but do not sign out user or reload)
-      resetGameState();
-      // Ensure sign out button remains visible if user is logged in
-      document.getElementById("signOutBtn").style.display = "block";
+      // Hard reset: immediately reload the page to return to the home screen
+      window.location.reload();
     }
 
     function resetGameState() {
@@ -1645,6 +1746,36 @@
       animalsFinished = 0;
       // Step 4: Reset totalTries to 0
       totalTries = 0;
+      // Also clear any spawn interval
+      if (spawnInterval) {
+        clearInterval(spawnInterval);
+        spawnInterval = null;
+      }
+      activeAnimals = 0;
+      countdownStarted = false;
+    }
+
+    function resetGameAndStart() {
+      resetGameState();
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('home').style.display = 'block';
+      // Ensure sign out button remains visible
+      document.getElementById("signOutBtn").style.display = "block";
+    }
+
+    function signOut() {
+      loggedInUser = null;
+      // Hide sign out button
+      document.getElementById("signOutBtn").style.display = "none";
+      // Show login, hide game
+      document.getElementById("loginContainer") && (document.getElementById("loginContainer").style.display = "block");
+      document.getElementById("gameContainer") && (document.getElementById("gameContainer").style.display = "none");
+      // Hide home/game screens
+      document.getElementById('home').style.display = 'none';
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('authContainer').style.display = 'block';
+      // Reset any other relevant data here
+      resetGameState();
     }
   window.quitGame = quitGame;
 
@@ -1654,7 +1785,267 @@
     if (quitBtn) {
       quitBtn.addEventListener("click", quitGame);
     }
+    // Masked typing for password fields
+    handleMaskedTyping(document.getElementById('authPassword'));
+    handleMaskedTyping(document.getElementById('regPassword'));
+
+    // Add Enter key login support
+    const loginForm = document.getElementById("login-form");
+    const loginButton = document.getElementById("login-btn");
+    if (loginForm && loginButton) {
+      loginForm.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault(); // Prevent form submission if needed
+          loginButton.click();    // Trigger the login
+        }
+      });
+    }
   });
+  // --------- OVERALL RESULTS FUNCTIONS ---------
+  function viewOverallResults() {
+    document.getElementById("gameOver").style.display = "none";
+    document.getElementById("overallResultsPage").style.display = "block";
+    loadOverallResults();
+  }
+
+  function returnToEndScreen() {
+    document.getElementById("overallResultsPage").style.display = "none";
+    document.getElementById("gameOver").style.display = "block";
+  }
+
+  function loadOverallResults() {
+    const ctx = document.getElementById('overallResultsChart').getContext('2d');
+    db.collection("users").doc(loggedInUser).collection("sessions").get().then(snapshot => {
+      // Sort session docs numerically so Trial #10 comes after Trial #9
+      const sortedDocs = snapshot.docs.slice().sort((a, b) => {
+        const aNum = parseInt(a.id.match(/\d+/)[0]);
+        const bNum = parseInt(b.id.match(/\d+/)[0]);
+        return aNum - bNum;
+      });
+      const labels = [], scores = [], difficulties = [], trials = [],
+        stimTimes = [], outcomeTimes = [], accuracies = [];
+      // New metric arrays
+      const correctGuessRights = [], inCorrectGuessRights = [], correctGuessLefts = [],
+        inCorrectGuessLefts = [], missedGuesses = [], metricScores = [];
+
+      sortedDocs.forEach(doc => {
+        const data = doc.data();
+        labels.push(`${doc.id} (${data.difficulty.charAt(0).toUpperCase() + data.difficulty.slice(1)})`);
+        const correct = parseInt(data.score.split("/")[0]);
+        const total = parseInt(data.score.split("/")[1]);
+        scores.push(correct);
+        difficulties.push(data.difficulty);
+        trials.push(data.numTrials || total || 0);
+        stimTimes.push(data.stimulusDuration || 0);
+        outcomeTimes.push(data.outcomeDuration || 0);
+        // Compute accuracy as (Correct Answers / Total Trials) * 100
+        let acc = 0;
+        if (total && !isNaN(correct) && !isNaN(total) && total > 0) acc = (correct / total) * 100;
+        else if (data.numTrials && data.numTrials > 0) acc = (correct / data.numTrials) * 100;
+        accuracies.push(Number.isFinite(acc) ? acc : 0);
+        // Extract and store new metrics
+        correctGuessRights.push(data.correctGuessRight !== undefined ? data.correctGuessRight : '');
+        inCorrectGuessRights.push(data.inCorrectGuessRight !== undefined ? data.inCorrectGuessRight : '');
+        correctGuessLefts.push(data.correctGuessLeft !== undefined ? data.correctGuessLeft : '');
+        inCorrectGuessLefts.push(data.inCorrectGuessLeft !== undefined ? data.inCorrectGuessLeft : '');
+        missedGuesses.push(data.missedGuess !== undefined ? data.missedGuess : '');
+        metricScores.push(data.metricScore !== undefined ? data.metricScore : '');
+      });
+
+      // Unique color for each line dataset
+      const colorTotalTrials = 'rgba(0, 123, 255, 1)';
+      const colorStimulus = 'rgba(40, 167, 69, 1)';
+      const colorOutcome = 'rgba(220, 53, 69, 1)';
+      const colorAccuracy = 'rgba(156, 39, 176, 1)';
+
+      // Remove previous chart if exists
+      if (window._overallResultsChart) {
+        window._overallResultsChart.destroy();
+      }
+      window._overallResultsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Correct Answers',
+              data: scores,
+              backgroundColor: 'rgba(255, 193, 7, 0.8)',
+              borderColor: 'rgba(255, 193, 7, 1)',
+              borderWidth: 1,
+              type: 'bar',
+              yAxisID: 'y'
+            },
+            {
+              label: 'Total Trials',
+              data: trials,
+              backgroundColor: 'rgba(0, 123, 255, 0.13)',
+              borderColor: colorTotalTrials,
+              borderWidth: 2,
+              type: 'line',
+              fill: false,
+              yAxisID: 'y2',
+              pointStyle: 'circle',
+              tension: 0.2
+            },
+            {
+              label: 'Stimulus Duration (sec)',
+              data: stimTimes,
+              backgroundColor: 'rgba(40, 167, 69, 0.13)',
+              borderColor: colorStimulus,
+              borderWidth: 2,
+              type: 'line',
+              fill: false,
+              yAxisID: 'y1',
+              pointStyle: 'triangle',
+              tension: 0.2
+            },
+            {
+              label: 'Outcome Duration (sec)',
+              data: outcomeTimes,
+              backgroundColor: 'rgba(220, 53, 69, 0.13)',
+              borderColor: colorOutcome,
+              borderWidth: 2,
+              type: 'line',
+              fill: false,
+              yAxisID: 'y1',
+              pointStyle: 'rectRot',
+              tension: 0.2
+            },
+            {
+              label: 'Accuracy (%)',
+              data: accuracies,
+              backgroundColor: 'rgba(156, 39, 176, 0.13)',
+              borderColor: colorAccuracy,
+              borderWidth: 2,
+              type: 'line',
+              fill: false,
+              yAxisID: 'y2',
+              pointStyle: 'star',
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Your Trial History with Session Metrics',
+              font: { size: 20 }
+            },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  // Show all session attributes in the tooltip
+                  const idx = context.dataIndex;
+                  // Defensive: Check arrays length
+                  const diff = difficulties[idx] || '';
+                  const stim = stimTimes[idx] !== undefined ? stimTimes[idx] : '';
+                  const outc = outcomeTimes[idx] !== undefined ? outcomeTimes[idx] : '';
+                  const ntrials = trials[idx] !== undefined ? trials[idx] : '';
+                  const acc = accuracies[idx] !== undefined ? accuracies[idx] : '';
+                  return [
+                    `Difficulty: ${diff}`,
+                    `Stimulus Duration: ${stim}s`,
+                    `Outcome Duration: ${outc}s`,
+                    `Total Trials: ${ntrials}`,
+                    `Accuracy: ${acc.toFixed(1)}%`
+                  ];
+                }
+              }
+            },
+            legend: {
+              display: true,
+              labels: {
+                // Use default color
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Correct Answers' }
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              title: { display: true, text: 'Durations (sec)' },
+              grid: { drawOnChartArea: false }
+            },
+            y2: {
+              beginAtZero: true,
+              position: 'right',
+              title: { display: true, text: 'Trials / Accuracy (%)' },
+              grid: { drawOnChartArea: false },
+              // For accuracy, max 100
+              min: 0,
+              max: 100,
+              ticks: {
+                callback: function(value, index, values) {
+                  return value;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Populate session summary table
+      const tableBody = document.getElementById("sessionDetailsBody");
+      tableBody.innerHTML = ""; // Clear any previous entries
+      sortedDocs.forEach((doc, i) => {
+        const data = doc.data();
+        const correct = parseInt(data.score.split("/")[0]);
+        const total = parseInt(data.score.split("/")[1]);
+        const accuracy = (total && total > 0) ? ((correct / total) * 100).toFixed(1) : (data.numTrials && data.numTrials > 0 ? ((correct / data.numTrials) * 100).toFixed(1) : '0.0');
+        // Get new metrics for this session
+        const cgr = data.correctGuessRight !== undefined ? data.correctGuessRight : '';
+        const icgr = data.inCorrectGuessRight !== undefined ? data.inCorrectGuessRight : '';
+        const cgl = data.correctGuessLeft !== undefined ? data.correctGuessLeft : '';
+        const icgl = data.inCorrectGuessLeft !== undefined ? data.inCorrectGuessLeft : '';
+        const missed = data.missedGuess !== undefined ? data.missedGuess : '';
+        const metric = data.metricScore !== undefined ? data.metricScore : '';
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td style="border: 1px solid #ccc; padding: 8px;">${doc.id}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${data.difficulty}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${correct}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${data.numTrials || total || ''}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${data.stimulusDuration}s</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${data.outcomeDuration}s</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${cgr}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${icgr}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${cgl}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${icgl}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${missed}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${metric}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${accuracy}%</td>
+        `;
+        tableBody.appendChild(row);
+      });
+      // Expand/add header columns for new metrics if not present
+      const thead = document.querySelector("#sessionDetails thead tr");
+      // Only add if not already present
+      if (thead && thead.children.length < 13) {
+        // Remove any extra headers (if any) to avoid duplication
+        while (thead.children.length > 6) {
+          thead.removeChild(thead.lastChild);
+        }
+        const headers = [
+          "Correct →", "Incorrect →", "Correct ←", "Incorrect ←", "Missed", "Metric Score", "Accuracy (%)"
+        ];
+        headers.forEach(h => {
+          const th = document.createElement('th');
+          th.style.border = "1px solid #ccc";
+          th.style.padding = "8px";
+          th.textContent = h;
+          thead.appendChild(th);
+        });
+      }
+    });
+  }
+  // --------- END OVERALL RESULTS FUNCTIONS ---------
   </script>
   <div class="container" id="feedbackForm" style="display:none;">
     <h2 style="text-align:center; color:white;">Feedback Form</h2>
@@ -1670,7 +2061,48 @@
     <input type="text" placeholder="Current Medication" style="width:100%; margin-bottom:10px; padding:10px; font-size: 1em; background-color: #fff; color: #000;" />
     <button onclick="submitFeedback()" style="width:100%; background-color:#1E90FF; color:white; padding:10px; font-size: 1em; border:none; border-radius:5px;">Submit Feedback</button>
   </div>
-  <div id="howItWorks" class="container" style="margin-top: 40px; background-color: rgba(0,0,0,0.7); padding: 20px; color: white; border-radius: 10px;">
+  <div id="howItWorksModal" style="display:none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 20px; border-radius: 12px; z-index: 10000; max-width: 90%; max-height: 80%; overflow-y: auto;">
+    <div style="background: #222; padding: 24px 20px; border-radius: 10px; max-width: 540px; margin: 0 auto; color: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.4);">
+      <h2>📘 How the Game Works</h2>
+      <h3>🔹 1. Difficulty Levels</h3>
+      <p>Each difficulty level controls how tilted the animal appears:</p>
+      <ul>
+        <li><strong>Easy:</strong> -45° (Very obvious direction)</li>
+        <li><strong>Medium:</strong> -22.5° (Moderate tilt)</li>
+        <li><strong>Difficult:</strong> -9.5° (Slight tilt)</li>
+        <li><strong>Adaptive:</strong> Adjusts dynamically as the player performs better or worse</li>
+      </ul>
+
+      <h3>🔹 2. How Animals Move</h3>
+      <p>Animals move horizontally across the screen, but their container is rotated, creating a diagonal movement illusion.</p>
+      <ul>
+        <li><strong>Direction = Q:</strong> Left</li>
+        <li><strong>Direction = P:</strong> Right</li>
+      </ul>
+
+      <h3>🔹 3. What Controls Difficulty</h3>
+      <p>Difficulty dynamically updates based on how many responses were correct or incorrect in a row (2 correct increases difficulty, 2 wrong decreases it).</p>
+
+      <h3>🔹 4. Key Mechanics</h3>
+      <ul>
+        <li><strong>ang:</strong> Rotation of the animal container</li>
+        <li><strong>x:</strong> Array of positions for the animal</li>
+        <li><strong>barWidth:</strong> Width of the animal image</li>
+        <li><strong>direction:</strong> 1 for left, -1 for right</li>
+      </ul>
+
+      <h3>🔹 5. What You Experience</h3>
+      <ol>
+        <li>Animal slides diagonally</li>
+        <li>Guess direction with P or Q</li>
+        <li>Feedback is given instantly</li>
+        <li>Chart at the end shows your performance</li>
+      </ol>
+      <button onclick="toggleHowItWorks()" style="margin-top: 15px; background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 8px;">Close</button>
+    </div>
+  </div>
+  <!-- Original How It Works container (now hidden, for accessibility fallback) -->
+  <div id="howItWorks" class="container" style="display:none;">
     <h2>📘 How the Game Works</h2>
     <h3>🔹 1. Difficulty Levels</h3>
     <p>Each difficulty level controls how tilted the animal appears:</p>
@@ -1680,17 +2112,14 @@
       <li><strong>Difficult:</strong> -9.5° (Slight tilt)</li>
       <li><strong>Adaptive:</strong> Adjusts dynamically as the player performs better or worse</li>
     </ul>
-
     <h3>🔹 2. How Animals Move</h3>
     <p>Animals move horizontally across the screen, but their container is rotated, creating a diagonal movement illusion.</p>
     <ul>
       <li><strong>Direction = Q:</strong> Left</li>
       <li><strong>Direction = P:</strong> Right</li>
     </ul>
-
     <h3>🔹 3. What Controls Difficulty</h3>
     <p>Difficulty dynamically updates based on how many responses were correct or incorrect in a row (2 correct increases difficulty, 2 wrong decreases it).</p>
-
     <h3>🔹 4. Key Mechanics</h3>
     <ul>
       <li><strong>ang:</strong> Rotation of the animal container</li>
@@ -1698,7 +2127,6 @@
       <li><strong>barWidth:</strong> Width of the animal image</li>
       <li><strong>direction:</strong> 1 for left, -1 for right</li>
     </ul>
-
     <h3>🔹 5. What You Experience</h3>
     <ol>
       <li>Animal slides diagonally</li>
@@ -1707,39 +2135,14 @@
       <li>Chart at the end shows your performance</li>
     </ol>
   </div>
-  <!-- 
-    🔥 What Is Firestore?
-
-    Firestore (Cloud Firestore) is a NoSQL database from Firebase (Google) that stores and syncs data in real-time. 
-    It's used here to save gameplay sessions and analyze past results.
-
-    🔍 Why Firestore in This App:
-      - This app runs a visual perception test
-      - It collects trial results and scores
-      - Now we store those results in Firestore so users can track progress over time
-
-    🧠 Analogy:
-      - Firestore = a giant online spreadsheet
-      - Each user = one section
-      - Each game session = one row
-      - Charts pull data from those rows to show historical performance
-
-    🔐 Example Firestore Structure:
-      /users
-        /diya123
-          /sessions
-            /1718035992000
-              - date: "2025-06-10T..."
-              - difficulty: "Medium"
-              - trialResults: [ ... ]
-
-    ✅ Benefits:
-      - Real-time updates
-      - Cloud-hosted and secure
-      - Free at small scale
-      - Enables long-term tracking and future upgrades (e.g., user accounts, login, dashboards)
-
-    Firestore is initialized in this file and used in the function saveSessionToFirestore(userId)
-  -->
+  <script>
+    function toggleHowItWorks() {
+      const modal = document.getElementById('howItWorksModal');
+      if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'block';
+      } else {
+        modal.style.display = 'none';
+      }
+    }
+  </script>
 </body>
-</html>
