@@ -796,9 +796,15 @@
 
   <script>
     let responseTimeout;
+    // --- Blinking background variables ---
     let backgroundCycleInterval = null;
-    let visualCountdownInterval = null;
     let currentBackgroundIndex = 0;
+    const backgroundImages = [
+      'Images/Background_1.jpeg',
+      'Images/Background_2.jpeg',
+      'Images/Background_3.jpeg'
+    ];
+    let visualCountdownInterval = null;
     let isQuitting = false;
     // Add global timer handles for countdown and trial
     let countdownInterval;
@@ -1346,6 +1352,8 @@
       const activateLightSound = Math.random() > 0.5;
       let distractorType = "none";
 
+      // --- Blinking background for visual distractor on #wave-container ---
+      const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
       if (activateLightSound) {
         if (selections.soundOn) {
           beepAudio.pause();
@@ -1353,23 +1361,45 @@
           beepAudio.play();
           distractorType = "sound";
         }
-
-        if (document.getElementById('lightsToggleBtn').classList.contains('active')) {
-        backgroundCycleInterval = setInterval(() => {
-          document.body.style.backgroundImage = `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-        }, 500);
-        distractorType = distractorType === "sound" ? "both" : "visual";
-      }
-
-      setTimeout(() => {
-        if (selections.soundOn) {
-          beepAudio.pause();
+        if (lightsEnabled) {
+          distractorType = distractorType === "sound" ? "both" : "visual";
         }
-        clearInterval(backgroundCycleInterval);
-        backgroundCycleInterval = null;
-        document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-      }, lightSoundDuration); // 66% of stimDuration
+        // Sound stops after 60% of stimDuration
+        setTimeout(() => {
+          if (selections.soundOn) {
+            beepAudio.pause();
+          }
+        }, lightSoundDuration);
+      }
+      // Only apply blinking background logic if lights are enabled for this trial
+      // --- Refactored blinking logic with blinkInterval and auto-stop after 60% of stimDuration ---
+      let blinkInterval = null; // Declare at function scope so both setInterval and clearInterval can access
+      if (lightsEnabled) {
+        let waveContainer = document.getElementById('wave-container');
+        waveContainer.style.backgroundSize = 'cover';
+        waveContainer.style.backgroundPosition = 'center';
+        waveContainer.style.backgroundRepeat = 'no-repeat';
+        // Reset index
+        currentBackgroundIndex = 0;
+        // Clear any pre-existing interval
+        if (backgroundCycleInterval !== null) {
+          clearInterval(backgroundCycleInterval);
+        }
+        // Start the blinking interval and assign to blinkInterval
+        blinkInterval = setInterval(() => {
+          waveContainer.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
+          currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+        }, 300);
+        // Auto-stop blinking after 60% of the stimulus duration
+        const stimulusDuration = selections.stimDuration;
+        const blinkDuration = stimulusDuration * 0.6 * 1000;
+        setTimeout(() => {
+          clearInterval(blinkInterval);
+          waveContainer.style.backgroundImage = "url('Images/Background.jpeg')";
+          waveContainer.style.backgroundSize = "cover";
+          waveContainer.style.backgroundPosition = "center";
+          waveContainer.style.backgroundRepeat = "no-repeat";
+        }, blinkDuration);
       }
 
       // Log distractor usage for this trial
@@ -1706,28 +1736,37 @@
       // Here you can collect form data and send it to a server or database.
     }
     function toggleLights() {
-    const btn = document.getElementById('lightsToggleBtn');
-    btn.classList.toggle('active');
-
-    if (btn.classList.contains('active')) {
-      btn.textContent = 'Lights On';
-      // ⚠️ DO NOT start blinking here
-    } else {
-      btn.textContent = 'Lights Off?';
-      clearInterval(backgroundCycleInterval);
-      backgroundCycleInterval = null;
-      currentBackgroundIndex = 0;
-      document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'top left';
-      document.body.style.backgroundRepeat = 'no-repeat';
-      document.body.style.backgroundAttachment = 'fixed';
+      const btn = document.getElementById('lightsToggleBtn');
+      btn.classList.toggle('active');
+      if (btn.classList.contains('active')) {
+        btn.textContent = 'Lights On';
+        // Do not start blinking here; blinking is handled at trial start.
+      } else {
+        btn.textContent = 'Lights Off?';
+        // If blinking is active, stop immediately and reset to first background image
+        if (backgroundCycleInterval !== null) {
+          clearInterval(backgroundCycleInterval);
+          backgroundCycleInterval = null;
+          currentBackgroundIndex = 0;
+          const waveContainer = document.getElementById('wave-container');
+          if (waveContainer) {
+            waveContainer.style.backgroundImage = `url('${backgroundImages[0]}')`;
+          }
+        }
+        // Optionally reset body background if you want, but not needed for #wave-container logic
+      }
     }
-}
 
     function quitGame() {
-      // Hard reset: immediately reload the page to return to the home screen
-      window.location.reload();
+      // Hide the test/game over screens, show the home screen
+      isQuitting = true;
+      document.getElementById('test').style.display = 'none';
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('home').style.display = 'block';
+      // Optionally reset game state (but do not sign out user or reload)
+      resetGameState();
+      // Ensure sign out button remains visible if user is logged in
+      document.getElementById("signOutBtn").style.display = "block";
     }
 
     function resetGameState() {
