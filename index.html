@@ -1352,7 +1352,7 @@
       const activateLightSound = Math.random() > 0.5;
       let distractorType = "none";
 
-      // --- Blinking background for visual distractor on #wave-container ---
+      // --- Blinking background for visual distractor on the parent of #wave-container ---
       const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
       if (activateLightSound) {
         if (selections.soundOn) {
@@ -1372,34 +1372,38 @@
         }, lightSoundDuration);
       }
       // Only apply blinking background logic if lights are enabled for this trial
-      // --- Refactored blinking logic with blinkInterval and auto-stop after 60% of stimDuration ---
-      let blinkInterval = null; // Declare at function scope so both setInterval and clearInterval can access
+      // --- Blinking background logic now applies to parent of #wave-container ---
+      let blinkInterval = null;
       if (lightsEnabled) {
-        let waveContainer = document.getElementById('wave-container');
-        waveContainer.style.backgroundSize = 'cover';
-        waveContainer.style.backgroundPosition = 'center';
-        waveContainer.style.backgroundRepeat = 'no-repeat';
-        // Reset index
-        currentBackgroundIndex = 0;
-        // Clear any pre-existing interval
-        if (backgroundCycleInterval !== null) {
-          clearInterval(backgroundCycleInterval);
+        const waveContainer = document.getElementById('wave-container');
+        const waveParent = waveContainer?.parentNode;
+        if (waveParent) {
+          waveParent.style.backgroundSize = 'cover';
+          waveParent.style.backgroundPosition = 'center';
+          waveParent.style.backgroundRepeat = 'no-repeat';
+          waveParent.style.transition = 'background-image 0.4s ease-in-out';
+          waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
         }
-        // Start the blinking interval and assign to blinkInterval
-        blinkInterval = setInterval(() => {
-          waveContainer.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
-          currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
-        }, 300);
-        // Auto-stop blinking after 60% of the stimulus duration
-        const stimulusDuration = selections.stimDuration;
-        const blinkDuration = stimulusDuration * 0.6 * 1000;
-        setTimeout(() => {
-          clearInterval(blinkInterval);
-          waveContainer.style.backgroundImage = "url('Images/Background.jpeg')";
-          waveContainer.style.backgroundSize = "cover";
-          waveContainer.style.backgroundPosition = "center";
-          waveContainer.style.backgroundRepeat = "no-repeat";
-        }, blinkDuration);
+        // Blinking/cycling backgrounds on parent container
+        if (waveParent) {
+          currentBackgroundIndex = 0;
+          if (backgroundCycleInterval !== null) {
+            clearInterval(backgroundCycleInterval);
+          }
+          blinkInterval = setInterval(() => {
+            waveParent.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
+            waveParent.style.transition = 'background-image 0.4s ease-in-out';
+            waveParent.style.backgroundSize = 'cover';
+            waveParent.style.backgroundPosition = 'center';
+            waveParent.style.backgroundRepeat = 'no-repeat';
+            currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+          }, 300);
+          const blinkDuration = selections.stimDuration * 0.6 * 1000;
+          setTimeout(() => {
+            clearInterval(blinkInterval);
+            waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
+          }, blinkDuration);
+        }
       }
 
       // Log distractor usage for this trial
@@ -1743,14 +1747,14 @@
         // Do not start blinking here; blinking is handled at trial start.
       } else {
         btn.textContent = 'Lights Off?';
-        // If blinking is active, stop immediately and reset to first background image
+        // If blinking is active, stop immediately and reset to static background image
         if (backgroundCycleInterval !== null) {
           clearInterval(backgroundCycleInterval);
           backgroundCycleInterval = null;
           currentBackgroundIndex = 0;
           const waveContainer = document.getElementById('wave-container');
           if (waveContainer) {
-            waveContainer.style.backgroundImage = `url('${backgroundImages[0]}')`;
+            waveContainer.style.backgroundImage = "url('Images/Background.jpeg')";
           }
         }
         // Optionally reset body background if you want, but not needed for #wave-container logic
