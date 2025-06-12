@@ -950,18 +950,15 @@
             // alert("Login successful!"); // Removed to prevent message box after successful login
             console.log("User authenticated, proceeding to homepage...");
             loggedInUser = username;
-            requestIdleCallback(() => {
-              document.getElementById('authContainer').style.display = 'none';
-              document.getElementById('home').style.display = 'block';
-              loginButton.disabled = false;
-              loginButton.textContent = "Login";
-              // Show sign out button after login
-              document.getElementById("signOutBtn").style.display = "block";
-              if (errorMessage) {
-                errorMessage.style.display = "none";
-                errorMessage.textContent = "";
-              }
-            });
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('home').style.display = 'block';
+            loginButton.disabled = false;
+            loginButton.textContent = "Login";
+            // Show sign out button after login
+            if (errorMessage) {
+              errorMessage.style.display = "none";
+              errorMessage.textContent = "";
+            }
           } else {
             // Show error message for incorrect password
             if (errorMessage) {
@@ -1587,13 +1584,34 @@
       document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
       chartContainer.style.display = 'block'; // Ensure the chart container is visible
 
-      // Hide all charts by default
-      document.getElementById('noDistractorChart').style.display = 'none';
-      document.getElementById('auditoryDistractorChart').style.display = 'none';
-      document.getElementById('visualDistractorChart').style.display = 'none';
+      // Group trial results by distractor type and in chunks of 5
+      const groupedResults = { none: [], sound: [], visual: [] };
+      trialResults.forEach((trial, index) => {
+        const groupKey = Math.floor(index / 5);
+        const type = trial.type || 'none';
+        if (!groupedResults[type][groupKey]) {
+          groupedResults[type][groupKey] = { correct: 0, incorrect: 0 };
+        }
+        if (trial.correct) {
+          groupedResults[type][groupKey].correct++;
+        } else {
+          groupedResults[type][groupKey].incorrect++;
+        }
+      });
+
+      // Check which distractor types are present in trialResults using Array.some()
+      const hasNone = trialResults.some(tr => tr.type === 'none');
+      const hasSound = trialResults.some(tr => tr.type === 'sound');
+      const hasVisual = trialResults.some(tr => tr.type === 'visual');
+
+      // Hide canvases for types not played, show for those played
+      document.getElementById('noDistractorChart').style.display = hasNone ? 'block' : 'none';
+      document.getElementById('auditoryDistractorChart').style.display = hasSound ? 'block' : 'none';
+      document.getElementById('visualDistractorChart').style.display = hasVisual ? 'block' : 'none';
 
       // Remove old interpretations/arrows before rendering new ones
       ['noDistractorChart', 'auditoryDistractorChart', 'visualDistractorChart'].forEach(id => {
+        // Remove all elements with id=`${id}-interp` and the next sibling if it's a blue arrow
         let interp = document.getElementById(`${id}-interp`);
         while (interp) {
           const next = interp.nextSibling;
@@ -1605,86 +1623,43 @@
         }
       });
 
-      // Filter trialResults by type
-      const trialsNone = trialResults.filter(tr => tr.type === 'none');
-      const trialsSound = trialResults.filter(tr => tr.type === 'sound');
-      const trialsVisual = trialResults.filter(tr => tr.type === 'visual');
-
-      const hasNone = trialsNone.length > 0;
-      const hasSound = trialsSound.length > 0;
-      const hasVisual = trialsVisual.length > 0;
-
-      // Helper to group trials into chunks of 5 (or by difficulty in adaptive)
-      function groupTrials(trials, difficultyMode) {
-        const grouped = [];
-        if (difficultyMode === "adaptive") {
-          // Group by difficulty, then by order
-          // Map: {easy:[], medium:[], hard:[], veryHard:[]}
-          const diffOrder = ['easy', 'medium', 'hard', 'veryHard'];
-          const byDiff = { easy: [], medium: [], hard: [], veryHard: [] };
-          // Find which adaptive level each trial was
-          let trialIdx = 0;
-          trials.forEach(trial => {
-            // Try to infer adaptive level from order if possible
-            // For now, just distribute evenly in order
-            const diff = diffOrder[trialIdx % 4];
-            byDiff[diff].push(trial);
-            trialIdx++;
-          });
-          // Flatten by difficulty, 5 per group
-          let all = [];
-          diffOrder.forEach(level => { all = all.concat(byDiff[level]); });
-          for (let i = 0; i < all.length; i += 5) {
-            const chunk = all.slice(i, i + 5);
-            grouped.push(chunk);
-          }
-        } else {
-          for (let i = 0; i < trials.length; i += 5) {
-            grouped.push(trials.slice(i, i + 5));
-          }
-        }
-        return grouped;
-      }
-
-      function prepareChartData(trials, difficultyMode) {
-        const groups = groupTrials(trials, difficultyMode);
+      // Pass difficulty mode to prepareChartData
+      const difficultyMode = selections.difficulty;
+      function prepareChartData(groupedData, difficultyMode) {
         const labels = [];
         const correctData = [];
         const incorrectData = [];
-        groups.forEach((chunk, idx) => {
+        groupedData.forEach((group, index) => {
           let label;
           if (difficultyMode === 'adaptive') {
-            const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][idx % 4];
-            label = `${difficultyGroup} #${Math.floor(idx / 4) + 1}`;
+            const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][index % 4];
+            label = `${difficultyGroup} #${Math.floor(index / 4) + 1}`;
           } else {
-            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} #${idx + 1}`;
+            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} #${index + 1}`;
           }
           labels.push(label);
-          correctData.push(chunk.filter(t => t.correct).length);
-          incorrectData.push(chunk.filter(t => !t.correct).length);
+          correctData.push(group.correct);
+          incorrectData.push(group.incorrect);
         });
         return { labels, correctData, incorrectData };
       }
+      const noDistractorData = prepareChartData(groupedResults.none, selections.difficulty);
+      const auditoryDistractorData = prepareChartData(groupedResults.sound, selections.difficulty);
+      const visualDistractorData = prepareChartData(groupedResults.visual, selections.difficulty);
 
       // Only render charts for distractor types that were played
       if (hasNone) {
-        document.getElementById('noDistractorChart').style.display = 'block';
-        const noDistractorData = prepareChartData(trialsNone, selections.difficulty);
-        renderChart('noDistractorChart', 'No Distractors', noDistractorData, 'Sensory Threshold (2)', true);
+        renderChart('noDistractorChart', 'No Distractors', noDistractorData, 'Sensory Threshold (2)');
       }
       if (hasSound) {
-        document.getElementById('auditoryDistractorChart').style.display = 'block';
-        const auditoryDistractorData = prepareChartData(trialsSound, selections.difficulty);
-        renderChart('auditoryDistractorChart', 'Auditory Distractors', auditoryDistractorData, 'Attention Threshold (2)', true);
+        renderChart('auditoryDistractorChart', 'Auditory Distractors', auditoryDistractorData, 'Attention Threshold (2)');
       }
       if (hasVisual) {
-        document.getElementById('visualDistractorChart').style.display = 'block';
-        const visualDistractorData = prepareChartData(trialsVisual, selections.difficulty);
-        renderChart('visualDistractorChart', 'Visual Distractors', visualDistractorData, 'Attention Threshold (2)', true);
+        renderChart('visualDistractorChart', 'Visual Distractors', visualDistractorData, 'Attention Threshold (2)');
       }
     }
 
-    function renderChart(canvasId, title, data, thresholdLabel, showInterpretation) {
+    function renderChart(canvasId, title, data, thresholdLabel) {
       // Remove old interpretation and arrow if present (done by displayResultsChart, but in case of rerender)
       let interp = document.getElementById(`${canvasId}-interp`);
       while (interp) {
@@ -1696,26 +1671,35 @@
         interp = document.getElementById(`${canvasId}-interp`);
       }
 
-      // Calculate total correct and determine interpretation
+      // Calculate total correct and determine interpretation (consistent mapping)
       const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
       let interpretationText = "";
       let interpColor = "green";
-      // Map interpretations strictly per instructions
       if (canvasId === 'noDistractorChart') {
-        interpretationText = totalCorrect > 2 ? "Good sensory function" : "Poor sensory function";
-        interpColor = totalCorrect > 2 ? "green" : "red";
+        if (totalCorrect > 2) {
+          interpretationText = "Good sensory function";
+          interpColor = "green";
+        } else {
+          interpretationText = "Poor sensory function";
+          interpColor = "red";
+        }
       } else if (canvasId === 'auditoryDistractorChart') {
-        interpretationText = "Sound-related attentional issues";
-        interpColor = "red";
+        if (totalCorrect > 2) {
+          interpretationText = "No attentional issues";
+          interpColor = "green";
+        } else {
+          interpretationText = "Sound-related attentional issues";
+          interpColor = "red";
+        }
       } else if (canvasId === 'visualDistractorChart') {
-        interpretationText = "Visual-related attentional issues";
-        interpColor = "red";
+        if (totalCorrect > 2) {
+          interpretationText = "No attentional issues";
+          interpColor = "green";
+        } else {
+          interpretationText = "Visual-related attentional issues";
+          interpColor = "red";
+        }
       }
-
-      // For auditory/visual chart: only show interpretation if chart was rendered (per showInterpretation param)
-      // For auditory/visual, only show "attentional issues" if present, not "no attentional issues"
-      if (canvasId === 'auditoryDistractorChart' && totalCorrect > 2) interpretationText = "";
-      if (canvasId === 'visualDistractorChart' && totalCorrect > 2) interpretationText = "";
 
       const ctx = document.getElementById(canvasId).getContext('2d');
       new Chart(ctx, {
@@ -1767,29 +1751,27 @@
         },
       });
 
-      // Only append interpretation text and arrow if chart was rendered and interpretationText is not empty
-      if (showInterpretation && interpretationText) {
-        const canvasEl = document.getElementById(canvasId);
-        const interpP = document.createElement('p');
-        interpP.id = `${canvasId}-interp`;
-        interpP.style.color = interpColor;
-        interpP.style.fontWeight = 'bold';
-        interpP.style.marginTop = "10px";
-        interpP.style.marginBottom = "8px";
-        interpP.textContent = interpretationText;
+      // Add interpretation text and arrow below the chart canvas
+      const canvasEl = document.getElementById(canvasId);
+      const interpP = document.createElement('p');
+      interpP.id = `${canvasId}-interp`;
+      interpP.style.color = interpColor;
+      interpP.style.fontWeight = 'bold';
+      interpP.style.marginTop = "10px";
+      interpP.style.marginBottom = "8px";
+      interpP.textContent = interpretationText;
 
-        // Arrow label below interpretation
-        const arrow = document.createElement('p');
-        arrow.style.color = 'blue';
-        arrow.style.fontSize = '0.95em';
-        arrow.style.marginTop = '2px';
-        arrow.style.marginBottom = '18px';
-        arrow.textContent = 'Increasing Difficulty →';
+      // Arrow label below interpretation
+      const arrow = document.createElement('p');
+      arrow.style.color = 'blue';
+      arrow.style.fontSize = '0.95em';
+      arrow.style.marginTop = '2px';
+      arrow.style.marginBottom = '18px';
+      arrow.textContent = 'Increasing Difficulty →';
 
-        // Place interp and arrow directly after the canvas (interp below chart, arrow below interp)
-        canvasEl.parentNode.insertBefore(interpP, canvasEl.nextSibling);
-        canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
-      }
+      // Place interp and arrow directly after the canvas (interp below chart, arrow below interp)
+      canvasEl.parentNode.insertBefore(interpP, canvasEl.nextSibling);
+      canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
     }
 
     function toggleSound() {
