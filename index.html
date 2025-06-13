@@ -644,10 +644,11 @@
 
     function submitRegistration() {
       const name = document.getElementById('regName').value.trim();
-      const username = document.getElementById('regUsername').value.trim();
-      const password = document.getElementById('regPassword').value;
+      const rawUsername = document.getElementById('regUsername').value.trim();
+      const username = rawUsername;                        // preserve exact casing
+      const password = document.getElementById('regPassword').value.trim();
 
-      if (!name || !username || !password) {
+      if (!name || !rawUsername || !password) {
         alert("Please fill out all fields.");
         return;
       }
@@ -898,7 +899,7 @@
     let loggedInUser = null;
 
     function registerUser() {
-      const username = document.getElementById('authUsername').value.trim().toLowerCase();
+      const username = document.getElementById('authUsername').value.trim();
       const password = document.getElementById('authPassword').value;
       if (!username || !password) {
         alert("Please enter a username and password.");
@@ -925,8 +926,8 @@
       const loginButton = document.getElementById("login-btn");
       loginButton.disabled = true;
       loginButton.textContent = "Logging in...";
-      const username = document.getElementById('authUsername').value.trim();
-      const password = document.getElementById('authPassword').value;
+      const username = document.getElementById('authUsername').value.trim();  // exact‑case lookup
+      const password = document.getElementById('authPassword').value.trim();
       const errorMessage = document.getElementById("loginErrorMessage");
       // Hide error message initially
       if (errorMessage) {
