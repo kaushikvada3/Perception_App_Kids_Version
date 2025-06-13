@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sensory Safari</title>
   <style>
-    #home {
-      opacity: 0;
-      transition: opacity 0.8s ease-in-out;
-    }
     #registerPage {
       max-width: 700px;
       width: 90%;
@@ -46,7 +42,7 @@
       border: 2px solid #FFD700;
       border-radius: 10px;
       box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
 
     #registerPage button {
@@ -77,21 +73,11 @@
     #registerPage a:hover {
       color: #ffffff;
     }
-    /* --- Animated, kid-friendly authContainer styles --- */
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
     #authContainer {
       padding: 30px 20px;
       background-color: rgba(0, 0, 0, 0.6);
       border-radius: 12px;
-      /* Kid-friendly border and shadow */
-      border: 4px solid #FFD700;
-      box-shadow: 0 0 30px rgba(255, 223, 0, 0.5);
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
     }
 
     #authContainer h2 {
@@ -99,9 +85,6 @@
       font-size: 2em;
       color: #fff;
       text-shadow: 1px 1px 3px #000;
-      /* Playful kid-friendly font */
-      font-family: 'Comic Sans MS', 'Arial', sans-serif;
-      letter-spacing: 1px;
     }
 
     #authContainer input {
@@ -114,7 +97,7 @@
       border: 2px solid #FFD700;
       border-radius: 10px;
       box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
 
     #authContainer button {
@@ -124,8 +107,6 @@
       border: none;
       color: white;
       transition: transform 0.2s, box-shadow 0.2s;
-      /* Subtle pulse animation for Register/Login buttons */
-      animation: pulse 2s infinite;
     }
 
     #authContainer button:hover {
@@ -134,7 +115,7 @@
     }
     body {
       margin: 0;
-      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
       background: url('Images/Background.jpeg') no-repeat center center fixed;
       background-size: cover;
       image-rendering: auto;
@@ -634,9 +615,6 @@
         <button type="button" id="login-btn" onclick="loginUser()" style="background-color:#28a745;">Login</button>
       </div>
       <div id="loginErrorMessage" style="display: none; color: red; margin-top: 10px;"></div>
-      <div id="loginSpinner" style="display:none; text-align:center; margin-top:10px;">
-        <img src="Images/spinner.gif" alt="Loading..." style="width:70px; height:70px;" />
-      </div>
     </form>
   </div>
 
@@ -811,16 +789,22 @@
 
   <div id="chartContainer" style="display: none; text-align: center; margin-top: 30px; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); width: 100%; max-width: 100%;">
     <h2 style="color: black;">Trial Results</h2>
-    <canvas id="noDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display:none;"></canvas>
-    <canvas id="auditoryDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display:none;"></canvas>
-    <canvas id="visualDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display:none;"></canvas>
+    <canvas id="noDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
+    <canvas id="auditoryDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
+    <canvas id="visualDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
   </div>
 
   <script>
     let responseTimeout;
+    // --- Blinking background variables ---
     let backgroundCycleInterval = null;
-    let visualCountdownInterval = null;
     let currentBackgroundIndex = 0;
+    const backgroundImages = [
+      'Images/Background_1.jpeg',
+      'Images/Background_2.jpeg',
+      'Images/Background_3.jpeg'
+    ];
+    let visualCountdownInterval = null;
     let isQuitting = false;
     // Add global timer handles for countdown and trial
     let countdownInterval;
@@ -938,6 +922,9 @@
     }
 
     function loginUser() {
+      const loginButton = document.getElementById("login-btn");
+      loginButton.disabled = true;
+      loginButton.textContent = "Logging in...";
       const username = document.getElementById('authUsername').value.trim();
       const password = document.getElementById('authPassword').value;
       const errorMessage = document.getElementById("loginErrorMessage");
@@ -946,14 +933,13 @@
         errorMessage.style.display = "none";
         errorMessage.textContent = "";
       }
-      // Show spinner
-      document.getElementById("loginSpinner").style.display = "block";
       if (!username || !password) {
         if (errorMessage) {
           errorMessage.style.display = "block";
           errorMessage.textContent = "Please enter your username and password.";
         }
-        document.getElementById("loginSpinner").style.display = "none";
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
         return;
       }
       db.collection("users").doc(username).get().then(doc => {
@@ -964,31 +950,26 @@
             // alert("Login successful!"); // Removed to prevent message box after successful login
             console.log("User authenticated, proceeding to homepage...");
             loggedInUser = username;
-            document.getElementById('authContainer').style.display = 'none';
-            // Fade in home page
-            const home = document.getElementById('home');
-            home.style.opacity = 0;
-            home.style.display = 'block';
-            home.style.transition = 'opacity 0.8s ease-in-out';
-            requestAnimationFrame(() => {
-              home.style.opacity = 1;
+            requestIdleCallback(() => {
+              document.getElementById('authContainer').style.display = 'none';
+              document.getElementById('home').style.display = 'block';
+              loginButton.disabled = false;
+              loginButton.textContent = "Login";
+              // Show sign out button after login
+              document.getElementById("signOutBtn").style.display = "block";
+              if (errorMessage) {
+                errorMessage.style.display = "none";
+                errorMessage.textContent = "";
+              }
             });
-            // Show sign out button after login
-            document.getElementById("signOutBtn").style.display = "block";
-            if (errorMessage) {
-              errorMessage.style.display = "none";
-              errorMessage.textContent = "";
-            }
-            // Hide spinner after successful login
-            document.getElementById("loginSpinner").style.display = "none";
           } else {
             // Show error message for incorrect password
             if (errorMessage) {
               errorMessage.style.display = "block";
               errorMessage.textContent = "Incorrect username or password. Please try again.";
             }
-            // Hide spinner after failed login
-            document.getElementById("loginSpinner").style.display = "none";
+            loginButton.disabled = false;
+            loginButton.textContent = "Login";
           }
         } else {
           // Show error message for non-existent user
@@ -996,11 +977,30 @@
             errorMessage.style.display = "block";
             errorMessage.textContent = "Incorrect username or password. Please try again.";
           }
-          // Hide spinner after failed login
-          document.getElementById("loginSpinner").style.display = "none";
+          loginButton.disabled = false;
+          loginButton.textContent = "Login";
         }
+      }).catch(() => {
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
       });
     }
+  // --------- IMAGE PRELOADING ---------
+  // Preload all key images to reduce lag
+  const preloadImages = [
+    'Images/Background.jpeg',
+    'Images/Background_1.jpeg',
+    'Images/Background_2.jpeg',
+    'Images/Background_3.jpeg',
+    'Images/Cat/cat.jpeg',
+    'Images/Owl/owl_on_branch.jpeg',
+    'Images/Turtle/turtle.jpeg',
+    'Images/Monkey/monkey_before_swing.jpeg'
+  ];
+  preloadImages.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
 
     function startGame() {
       const playerNameInput = loggedInUser;
@@ -1087,13 +1087,13 @@
       countdownStarted = false;
 
       const lastTrial = trialResults[trialResults.length - 1];
-      const isCorrect = key.toUpperCase() === window.correctAnswer.toUpperCase();
-      lastTrial.correct = isCorrect;
+      let isCorrect = false;
 
-      if (isCorrect) {
+      if (key.toUpperCase() === window.correctAnswer.toUpperCase()) {
         score++;
         // Update on‑screen score after a correct response
         document.getElementById('score').textContent = `Score: ${score}`;
+        isCorrect = true;
         if (key.toUpperCase() === 'Q') window.correctRight++;
         else if (key.toUpperCase() === 'P') window.correctLeft++;
         console.log('Correct! Score:', score);
@@ -1118,7 +1118,7 @@
     function handleMissedResponse() {
       console.log('No response given.');
       const lastTrial = trialResults[trialResults.length - 1];
-      lastTrial.correct = false;
+      lastTrial.correct = false; // Mark the last trial as incorrect
       performanceTracker.push('wrong');
       if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       adjustDifficulty(); // Adjust difficulty dynamically
@@ -1358,6 +1358,51 @@
       // Start spawning immediately, first animal gets full duration
       spawnAnimal(stimDuration);
 
+      // --- Activate distractors (sound/lights) immediately after first animal spawns ---
+      const activateLightSound = selections.soundOn || document.getElementById('lightsToggleBtn').classList.contains('active');
+      let distractorType = "none";
+      const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
+      if (activateLightSound) {
+        if (selections.soundOn) {
+          beepAudio.pause();
+          beepAudio.currentTime = 0;
+          beepAudio.play();
+        }
+
+        if (lightsEnabled) {
+          const waveParent = document.getElementById('wave-container')?.parentNode;
+          if (waveParent) {
+            currentBackgroundIndex = 0;
+            if (backgroundCycleInterval !== null) clearInterval(backgroundCycleInterval);
+            backgroundCycleInterval = setInterval(() => {
+              waveParent.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
+              currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+            }, 600);
+          }
+        }
+
+        // Stop both after 60% of stimDuration
+        setTimeout(() => {
+          if (selections.soundOn) beepAudio.pause();
+          if (lightsEnabled) {
+            const waveParent = document.getElementById('wave-container')?.parentNode;
+            if (waveParent) waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
+            if (backgroundCycleInterval) clearInterval(backgroundCycleInterval);
+          }
+        }, stimDuration * 0.6); // Stop at 60% of stimDuration
+      }
+      if (activateLightSound) {
+        if (selections.soundOn && lightsEnabled) {
+          distractorType = "both";
+        } else if (selections.soundOn) {
+          distractorType = "sound";
+        } else if (lightsEnabled) {
+          distractorType = "visual";
+        }
+      } else {
+        distractorType = "none";
+      }
+
       // Keep spawning at regular intervals until stimDuration expires or user responds
       const taskStart = Date.now();
       spawnInterval = setInterval(() => {
@@ -1378,44 +1423,8 @@
       window.correctAnswer = direction === 'Forward' ? 'Q' : 'P';
       currentTry++;
 
-      const lightSoundDuration = stimDuration * 0.6; // 60% of stimulus duration
-
-      // ---------- Decide which distractors are active for this trial ----------
-      const lightsAreOn = document.getElementById('lightsToggleBtn')
-                                .classList.contains('active');
-      const soundIsOn   = selections.soundOn;
-
-      let distractorType = 'none';          // default → baseline
-      if (lightsAreOn && soundIsOn)   distractorType = 'both';
-      else if (lightsAreOn)           distractorType = 'visual';
-      else if (soundIsOn)             distractorType = 'sound';
-      // ------------------------------------------------------------------------
-
-      // turn sound or lights on only if user enabled them
-      if (soundIsOn) {
-        beepAudio.pause();
-        beepAudio.currentTime = 0;
-        beepAudio.play();
-      }
-
-      if (lightsAreOn) {
-        document.body.style.transition = 'background-image 0.8s ease-in-out';
-        backgroundCycleInterval = setInterval(() => {
-          document.body.style.backgroundImage =
-            `url('Images/Background_${(currentBackgroundIndex % 3) + 1}.jpeg')`;
-          currentBackgroundIndex = (currentBackgroundIndex + 1) % 3;
-        }, 500);
-
-        // stop blinking after 60 % of the stimulus duration
-        setTimeout(() => {
-          clearInterval(backgroundCycleInterval);
-          backgroundCycleInterval = null;
-          document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-        }, selections.stimDuration * 0.6 * 1000);
-      }
-
       // Log distractor usage for this trial
-      trialResults.push({ type: distractorType, correct: null });  // mark ungraded
+      trialResults.push({ type: distractorType, correct: false });
 
       // No timeout-based countdown trigger needed; countdown starts after last animal's animationend.
       document.getElementById('responseCountdown').textContent = '';
@@ -1560,77 +1569,132 @@
 
     function displayResultsChart() {
       const chartContainer = document.getElementById('chartContainer');
-      document.getElementById('gameOver').appendChild(chartContainer);
-      chartContainer.style.display = 'block';
+      document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
+      chartContainer.style.display = 'block'; // Ensure the chart container is visible
 
-      // Group trialResults by distractor type
-      let groupedResults = { none: [], sound: [], visual: [] };
-      let counters = { none: 0, sound: 0, visual: 0 };
-
-      trialResults.forEach(trial => {
-        const key = trial.type === 'none' ? 'none' : (trial.type === 'sound' ? 'sound' : 'visual');
-        // Use one group for entire session of each type
-        const groupIndex = 0;
-        if (!groupedResults[key][groupIndex]) {
-          groupedResults[key][groupIndex] = { correct: 0, incorrect: 0 };
+      // Group trial results by distractor type and in chunks of 5
+      const groupedResults = { none: [], sound: [], visual: [] };
+      trialResults.forEach((trial, index) => {
+        const groupKey = Math.floor(index / 5);
+        const types = [];
+        if (trial.type === 'both') {
+          types.push('sound', 'visual');
+        } else {
+          types.push(trial.type || 'none');
         }
-        groupedResults[key][groupIndex][trial.correct ? 'correct' : 'incorrect']++;
-        counters[key]++;
+        types.forEach(type => {
+          if (!groupedResults[type][groupKey]) {
+            groupedResults[type][groupKey] = { correct: 0, incorrect: 0 };
+          }
+          if (trial.correct) {
+            groupedResults[type][groupKey].correct++;
+          } else {
+            groupedResults[type][groupKey].incorrect++;
+          }
+        });
       });
 
-      // Prepare data helper
-      function prepareChartData(arr) {
-        const labels = [], correctData = [], incorrectData = [];
-        arr.forEach((grp, i) => {
-          labels.push(`${selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1)} #${i+1}`);
-          correctData.push(grp.correct);
-          incorrectData.push(grp.incorrect);
+      // Check which distractor types are present in trialResults using Array.some()
+      const hasNone = trialResults.some(tr => tr.type === 'none');
+      const hasSound = trialResults.some(tr => tr.type === 'sound' || tr.type === 'both');
+      const hasVisual = trialResults.some(tr => tr.type === 'visual' || tr.type === 'both');
+
+      // Hide canvases for types not played, show for those played
+      document.getElementById('noDistractorChart').style.display = hasNone ? 'block' : 'none';
+      document.getElementById('auditoryDistractorChart').style.display = hasSound ? 'block' : 'none';
+      document.getElementById('visualDistractorChart').style.display = hasVisual ? 'block' : 'none';
+
+      // Remove old interpretations/arrows before rendering new ones
+      ['noDistractorChart', 'auditoryDistractorChart', 'visualDistractorChart'].forEach(id => {
+        // Remove all elements with id=`${id}-interp` and the next sibling if it's a blue arrow
+        let interp = document.getElementById(`${id}-interp`);
+        while (interp) {
+          const next = interp.nextSibling;
+          interp.remove();
+          if (next && next.tagName === 'P' && next.textContent && next.textContent.includes('Increasing Difficulty')) {
+            next.remove();
+          }
+          interp = document.getElementById(`${id}-interp`);
+        }
+      });
+
+      // Pass difficulty mode to prepareChartData
+      const difficultyMode = selections.difficulty;
+      function prepareChartData(groupedData, difficultyMode) {
+        const labels = [];
+        const correctData = [];
+        const incorrectData = [];
+        groupedData.forEach((group, index) => {
+          let label;
+          if (difficultyMode === 'adaptive') {
+            const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][index % 4];
+            label = `${difficultyGroup} #${Math.floor(index / 4) + 1}`;
+          } else {
+            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} #${index + 1}`;
+          }
+          labels.push(label);
+          correctData.push(group.correct);
+          incorrectData.push(group.incorrect);
         });
         return { labels, correctData, incorrectData };
       }
+      const noDistractorData = prepareChartData(groupedResults.none, selections.difficulty);
+      const auditoryDistractorData = prepareChartData(groupedResults.sound, selections.difficulty);
+      const visualDistractorData = prepareChartData(groupedResults.visual, selections.difficulty);
 
-      const hasNone = groupedResults.none.length > 0;
-      const hasSound = groupedResults.sound.length > 0;
-      const hasVisual = groupedResults.visual.length > 0;
-
-      // Hide canvases we don’t need before rendering
-      document.getElementById('noDistractorChart').style.display       = hasNone   ? 'block' : 'none';
-      document.getElementById('auditoryDistractorChart').style.display = hasSound  ? 'block' : 'none';
-      document.getElementById('visualDistractorChart').style.display   = hasVisual ? 'block' : 'none';
-
-      // No Distractor Chart
-      const noEl = document.getElementById('noDistractorChart');
+      // Only render charts for distractor types that were played
       if (hasNone) {
-        renderChart('noDistractorChart', 'No Distractors (Baseline)', prepareChartData(groupedResults.none));
+        renderChart('noDistractorChart', 'No Distractors', noDistractorData, 'Sensory Threshold (2)');
       }
-
-      // Auditory
-      const audEl = document.getElementById('auditoryDistractorChart');
       if (hasSound) {
-        renderChart('auditoryDistractorChart', 'Auditory Distractors', prepareChartData(groupedResults.sound));
+        renderChart('auditoryDistractorChart', 'Auditory Distractors', auditoryDistractorData, 'Attention Threshold (2)');
       }
-
-      // Visual
-      const visEl = document.getElementById('visualDistractorChart');
       if (hasVisual) {
-        renderChart('visualDistractorChart', 'Visual Distractors', prepareChartData(groupedResults.visual));
+        renderChart('visualDistractorChart', 'Visual Distractors', visualDistractorData, 'Attention Threshold (2)');
       }
     }
 
     function renderChart(canvasId, title, data, thresholdLabel) {
-      const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
-      let interpretationText;
-      if (canvasId === 'noDistractorChart') {
-        interpretationText = totalCorrect > 2 ? 'Good sensory function' : 'Poor sensory function';
-      } else if (canvasId === 'auditoryDistractorChart') {
-        interpretationText = totalCorrect > 2 ? 'No attentional issues' : 'Sound-related attentional issues';
-      } else {
-        interpretationText = totalCorrect > 2 ? 'No attentional issues' : 'Visual-related attentional issues';
+      // Remove old interpretation and arrow if present (done by displayResultsChart, but in case of rerender)
+      let interp = document.getElementById(`${canvasId}-interp`);
+      while (interp) {
+        const next = interp.nextSibling;
+        interp.remove();
+        if (next && next.tagName === 'P' && next.textContent && next.textContent.includes('Increasing Difficulty')) {
+          next.remove();
+        }
+        interp = document.getElementById(`${canvasId}-interp`);
       }
 
-      // Remove old interpretation paragraph if present
-      const oldP = document.querySelector(`#${canvasId}-interp`);
-      if (oldP) oldP.remove();
+      // Calculate total correct and determine interpretation (consistent mapping)
+      const totalCorrect = data.correctData.reduce((a, b) => a + b, 0);
+      let interpretationText = "";
+      let interpColor = "green";
+      if (canvasId === 'noDistractorChart') {
+        if (totalCorrect > 2) {
+          interpretationText = "Good sensory function";
+          interpColor = "green";
+        } else {
+          interpretationText = "Poor sensory function";
+          interpColor = "red";
+        }
+      } else if (canvasId === 'auditoryDistractorChart') {
+        if (totalCorrect > 2) {
+          interpretationText = "No attentional issues";
+          interpColor = "green";
+        } else {
+          interpretationText = "Sound-related attentional issues";
+          interpColor = "red";
+        }
+      } else if (canvasId === 'visualDistractorChart') {
+        if (totalCorrect > 2) {
+          interpretationText = "No attentional issues";
+          interpColor = "green";
+        } else {
+          interpretationText = "Visual-related attentional issues";
+          interpColor = "red";
+        }
+      }
 
       const ctx = document.getElementById(canvasId).getContext('2d');
       new Chart(ctx, {
@@ -1682,26 +1746,27 @@
         },
       });
 
-      // Add interpretation text and arrow below the chart container
+      // Add interpretation text and arrow below the chart canvas
       const canvasEl = document.getElementById(canvasId);
-      const interp = document.createElement('p');
-      interp.id = `${canvasId}-interp`;
-      interp.style.color = (interpretationText.includes('Sound') ? 'red' : 'green');
-      interp.style.fontWeight = 'bold';
-      interp.textContent = interpretationText;
+      const interpP = document.createElement('p');
+      interpP.id = `${canvasId}-interp`;
+      interpP.style.color = interpColor;
+      interpP.style.fontWeight = 'bold';
+      interpP.style.marginTop = "10px";
+      interpP.style.marginBottom = "8px";
+      interpP.textContent = interpretationText;
 
-      // Arrow label
+      // Arrow label below interpretation
       const arrow = document.createElement('p');
-      arrow.style.color = 'navy';
-      arrow.style.fontSize = '0.9em';
-      arrow.style.marginTop = '-5px';
-      arrow.style.marginBottom = '15px';
+      arrow.style.color = 'blue';
+      arrow.style.fontSize = '0.95em';
+      arrow.style.marginTop = '2px';
+      arrow.style.marginBottom = '18px';
       arrow.textContent = 'Increasing Difficulty →';
 
-      // Place both interp and arrow at the bottom of the chart container
-      const container = canvasEl.parentNode;
-      container.appendChild(interp);
-      container.appendChild(arrow);
+      // Place interp and arrow directly after the canvas (interp below chart, arrow below interp)
+      canvasEl.parentNode.insertBefore(interpP, canvasEl.nextSibling);
+      canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
     }
 
     function toggleSound() {
@@ -1726,28 +1791,37 @@
       // Here you can collect form data and send it to a server or database.
     }
     function toggleLights() {
-    const btn = document.getElementById('lightsToggleBtn');
-    btn.classList.toggle('active');
-
-    if (btn.classList.contains('active')) {
-      btn.textContent = 'Lights On';
-      // ⚠️ DO NOT start blinking here
-    } else {
-      btn.textContent = 'Lights Off?';
-      clearInterval(backgroundCycleInterval);
-      backgroundCycleInterval = null;
-      currentBackgroundIndex = 0;
-      document.body.style.backgroundImage = "url('Images/Background.jpeg')";
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'top left';
-      document.body.style.backgroundRepeat = 'no-repeat';
-      document.body.style.backgroundAttachment = 'fixed';
+      const btn = document.getElementById('lightsToggleBtn');
+      btn.classList.toggle('active');
+      if (btn.classList.contains('active')) {
+        btn.textContent = 'Lights On';
+        // Do not start blinking here; blinking is handled at trial start.
+      } else {
+        btn.textContent = 'Lights Off?';
+        // If blinking is active, stop immediately and reset to static background image
+        if (backgroundCycleInterval !== null) {
+          clearInterval(backgroundCycleInterval);
+          backgroundCycleInterval = null;
+          currentBackgroundIndex = 0;
+          const waveContainer = document.getElementById('wave-container');
+          if (waveContainer) {
+            waveContainer.style.backgroundImage = "url('Images/Background.jpeg')";
+          }
+        }
+        // Optionally reset body background if you want, but not needed for #wave-container logic
+      }
     }
-}
 
     function quitGame() {
-      // Hard reset: immediately reload the page to return to the home screen
-      window.location.reload();
+      // Hide the test/game over screens, show the home screen
+      isQuitting = true;
+      document.getElementById('test').style.display = 'none';
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('home').style.display = 'block';
+      // Optionally reset game state (but do not sign out user or reload)
+      resetGameState();
+      // Ensure sign out button remains visible if user is logged in
+      document.getElementById("signOutBtn").style.display = "block";
     }
 
     function resetGameState() {
