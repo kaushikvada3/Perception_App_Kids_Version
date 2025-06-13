@@ -951,18 +951,26 @@
             // alert("Login successful!"); // Removed to prevent message box after successful login
             console.log("User authenticated, proceeding to homepage...");
             loggedInUser = username;
-            requestIdleCallback(() => {
+
+            const showHome = () => {
               document.getElementById('authContainer').style.display = 'none';
               document.getElementById('home').style.display = 'block';
               loginButton.disabled = false;
               loginButton.textContent = "Login";
-              // Show sign out button after login
+              // Show sign‑out button after login
               document.getElementById("signOutBtn").style.display = "block";
               if (errorMessage) {
                 errorMessage.style.display = "none";
                 errorMessage.textContent = "";
               }
-            });
+            };
+
+            // Use requestIdleCallback when available; otherwise, fall back to setTimeout
+            if ('requestIdleCallback' in window) {
+              window.requestIdleCallback(showHome);
+            } else {
+              setTimeout(showHome, 0);
+            }
           } else {
             // Show error message for incorrect password
             if (errorMessage) {
