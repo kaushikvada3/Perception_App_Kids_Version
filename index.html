@@ -1363,50 +1363,46 @@
       // Start spawning immediately, first animal gets full duration
       spawnAnimal(stimDuration);
 
-      // --- Activate distractors (sound/lights) immediately after first animal spawns ---
-      const activateLightSound = selections.soundOn || document.getElementById('lightsToggleBtn').classList.contains('active');
-      let distractorType = "none";
+      // --- Always activate distractors at trial start ---
       const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
-      if (activateLightSound) {
+      if (selections.soundOn) {
+        beepAudio.pause();
+        beepAudio.currentTime = 0;
+        beepAudio.play();
+      }
+      if (lightsEnabled) {
+        const waveParent = document.getElementById('wave-container').parentNode;
+        if (waveParent) {
+          currentBackgroundIndex = 0;
+          if (backgroundCycleInterval) clearInterval(backgroundCycleInterval);
+          backgroundCycleInterval = setInterval(() => {
+            waveParent.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
+            currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+          }, 600);
+        }
+      }
+      // Stop distractors after 60% of the stimulus period
+      setTimeout(() => {
         if (selections.soundOn) {
           beepAudio.pause();
-          beepAudio.currentTime = 0;
-          beepAudio.play();
         }
-
         if (lightsEnabled) {
-          const waveParent = document.getElementById('wave-container')?.parentNode;
-          if (waveParent) {
-            currentBackgroundIndex = 0;
-            if (backgroundCycleInterval !== null) clearInterval(backgroundCycleInterval);
-            backgroundCycleInterval = setInterval(() => {
-              waveParent.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
-              currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
-            }, 600);
+          const waveParent = document.getElementById('wave-container').parentNode;
+          if (waveParent) waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
+          if (backgroundCycleInterval) {
+            clearInterval(backgroundCycleInterval);
+            backgroundCycleInterval = null;
           }
         }
-
-        // Stop both after 60% of stimDuration
-        setTimeout(() => {
-          if (selections.soundOn) beepAudio.pause();
-          if (lightsEnabled) {
-            const waveParent = document.getElementById('wave-container')?.parentNode;
-            if (waveParent) waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
-            if (backgroundCycleInterval) clearInterval(backgroundCycleInterval);
-          }
-        }, stimDuration * 0.6); // Stop at 60% of stimDuration
-      }
-      if (activateLightSound) {
-        if (selections.soundOn && lightsEnabled) {
-          distractorType = "both";
-        } else if (selections.soundOn) {
-          distractorType = "sound";
-        } else if (lightsEnabled) {
-          distractorType = "visual";
-        }
-      } else {
-        distractorType = "none";
-      }
+      }, stimDuration * 0.6);
+      // Log distractor type for this trial
+      const distractorType = selections.soundOn && lightsEnabled
+        ? 'both'
+        : selections.soundOn
+          ? 'sound'
+          : lightsEnabled
+            ? 'visual'
+            : 'none';
 
       // Keep spawning at regular intervals until stimDuration expires or user responds
       const taskStart = Date.now();
