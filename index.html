@@ -965,12 +965,8 @@
               }
             };
 
-            // Use requestIdleCallback when available; otherwise, fall back to setTimeout
-            if ('requestIdleCallback' in window) {
-              window.requestIdleCallback(showHome);
-            } else {
-              setTimeout(showHome, 0);
-            }
+            // Immediately transition to the home screen
+            showHome();
           } else {
             // Show error message for incorrect password
             if (errorMessage) {
