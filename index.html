@@ -1567,6 +1567,8 @@
           userRef.collection("sessions").doc(trialName).set(sessionData).then(() => {
             console.log("Session stored as:", trialName);
             userRef.update({ sessionCount: newCount }); // ✅ Update counter
+            // Debug log after saving session
+            console.log("✅ Session data saved to Firestore:", sessionData);
           }).catch(err => console.error("🔥 Firestore error:", err));
         }
       });
@@ -1670,6 +1672,12 @@
           next.remove();
         }
         interp = document.getElementById(`${canvasId}-interp`);
+      }
+
+      // Destroy any existing Chart instance for this canvas to avoid "Canvas is already in use" error
+      const existingChart = Chart.getChart(canvasId);
+      if (existingChart) {
+        existingChart.destroy();
       }
 
       // Calculate total correct and determine interpretation (consistent mapping)
@@ -1917,7 +1925,18 @@
 
   function loadOverallResults() {
     const ctx = document.getElementById('overallResultsChart').getContext('2d');
+    // Debug log at start of loading sessions
+    console.log("Attempting to load sessions for:", loggedInUser);
     db.collection("users").doc(loggedInUser).collection("sessions").get().then(snapshot => {
+      if (snapshot.empty) {
+        console.log("No session history found for user:", loggedInUser);
+        document.getElementById("overallResultsPage").innerHTML += `
+          <p style="text-align:center; font-size:1.2em; color:black; margin-top:40px;">
+            No session data found. Play a game first and return here!
+          </p>
+        `;
+        return;
+      }
       // Sort session docs numerically so Trial #10 comes after Trial #9
       const sortedDocs = snapshot.docs.slice().sort((a, b) => {
         const aNum = parseInt(a.id.match(/\d+/)[0]);
