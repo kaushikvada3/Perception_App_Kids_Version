@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sensory Safari</title>
@@ -1259,8 +1262,10 @@
 
         // Calculate correct answers directly from trialResults
         const totalCorrect = trialResults.filter(tr => tr.correct).length;
+        // Fallback to ensure denominator is never zero
+        const effectiveTotal = totalTries || selections.numTries || tries;
         document.getElementById('finalScore').textContent =
-          `Score: ${totalCorrect} / ${totalTries} | Metric: ${dprime1}`;
+          `Score: ${totalCorrect} / ${effectiveTotal} | Metric: ${dprime1}`;
         console.log("Distractor Log:", distractorLog); // Log distractor usage at the end
 
         // --- Firebase Firestore session logging ---
@@ -1595,8 +1600,8 @@
         });
       });
 
-      // Check which distractor types are present in trialResults using Array.some()
-      const hasNone = trialResults.some(tr => tr.type === 'none');
+      // Show no-distractor chart if no trials logged
+      const hasNone = trialResults.length === 0 || trialResults.some(tr => tr.type === 'none');
       const hasSound = trialResults.some(tr => tr.type === 'sound' || tr.type === 'both');
       const hasVisual = trialResults.some(tr => tr.type === 'visual' || tr.type === 'both');
 
@@ -1837,7 +1842,9 @@
       document.getElementById('finalScore').textContent = 'Score: 0 / 0 | Metric: N/A';
       trialResults = [];
       distractorLog = [];
-      document.getElementById('chartContainer').innerHTML = '';
+      // Hide charts without removing canvases
+      const chartContainer = document.getElementById('chartContainer');
+      if (chartContainer) chartContainer.style.display = 'none';
       animalsFinished = 0;
       // Step 4: Reset totalTries to 0
       totalTries = 0;
