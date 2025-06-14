@@ -1207,7 +1207,7 @@
         const inCorrectGuessLeft   = window.incorrectLeft  || 0;
         const missedGuess          = (window.noResponseRight || 0) + (window.noResponseLeft || 0);
 
-        // Compute FracHit and FracCR per new formula
+        // Compute FracHit and FracCR per original formula
         let fractHit = 0, fractCR = 0;
         if (correctGuessRight + inCorrectGuessRight + missedGuess / 2 !== 0) {
           fractHit = correctGuessRight / (correctGuessRight + inCorrectGuessRight + missedGuess / 2);
@@ -1215,6 +1215,12 @@
         if (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2 !== 0) {
           fractCR = inCorrectGuessLeft / (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2);
         }
+        // Apply research-grade clamping for edge cases
+        if (fractHit === 1) fractHit = 0.99;
+        else if (fractHit === 0) fractHit = 0.01;
+
+        if (fractCR === 0) fractCR = 0.01;
+        else if (fractCR === 1) fractCR = 0.99;
 
         function norminv(p) {
           if (p === 0) {
@@ -1233,45 +1239,15 @@
           return 1 - d * x;
         }
 
+        // norminv called after clamping
         const dp1 = norminv(fractHit);
         const dp2 = norminv(fractCR);
         const dprime1 = (dp1 - dp2).toFixed(3);
-
-        const existingInterpretations = document.querySelectorAll('#gameOver p.interpretation');
-        existingInterpretations.forEach(p => p.remove());
-        const interpretation = document.createElement('p');
-        interpretation.classList.add('interpretation');
-        interpretation.style.color = 'white';
-        interpretation.style.fontSize = '1.5em';
-        interpretation.style.marginTop = '10px';
-        interpretation.style.textShadow = '2px 2px 5px #000';
-
-        if (dprime1 > 1.5) {
-          interpretation.textContent = 'Great sensory recognition! Performance indicates strong perceptual awareness.';
-        } else if (dprime1 > 0.5) {
-          interpretation.textContent = 'Moderate sensory recognition. Performance is above average.';
-        } else if (dprime1 > 0) {
-          interpretation.textContent = 'Slightly better than guessing. May suggest some perceptual difficulty.';
-        } else if (dprime1 == 0) {
-          interpretation.textContent = 'Performance is at chance level. Could indicate uncertain sensory recognition.';
-        } else {
-          interpretation.textContent = 'Performance is below chance. May suggest difficulty with sensory perception.';
-        }
-
-        document.getElementById('gameOver').appendChild(interpretation);
-
-        // Calculate correct answers directly from trialResults
-        const totalCorrect = trialResults.filter(tr => tr.correct).length;
-        // Fallback to ensure denominator is never zero
-        const effectiveTotal = totalTries || selections.numTries || tries;
+        // Update final score text to include metric
+        const totalCorrect = (window.correctRight || 0) + (window.correctLeft || 0);
+        const totalTrials = tries;
         document.getElementById('finalScore').textContent =
-          `Score: ${totalCorrect} / ${effectiveTotal} | Metric: ${dprime1}`;
-        console.log("Distractor Log:", distractorLog); // Log distractor usage at the end
-
-        // --- Firebase Firestore session logging ---
-        logSessionToFirestore(selections.playerName);
-        // --- End Firebase Firestore session logging ---
-        return;
+          `Score: ${totalCorrect} / ${totalTrials} | Metric: ${dprime1}`;
       }
 
       document.getElementById('taskNum').textContent = currentTry + 1;
@@ -1354,6 +1330,29 @@
         img.style.zIndex = 5;
 
         waveContainer.appendChild(img);
+
+        // Trigger the sound loop only for the first spawned animal,
+        // but defer sound start until after DOM visually renders the animal.
+        if (activeAnimals === 1 && selections.soundOn) {
+          setTimeout(() => {
+            requestAnimationFrame(() => {
+              let beepRepeatCount = Math.floor((stimDuration * 0.6) / 1000);
+              let playedCount = 0;
+
+              const playBeepLoop = () => {
+                if (playedCount < beepRepeatCount) {
+                  beepAudio.pause();
+                  beepAudio.currentTime = 0;
+                  beepAudio.play();
+                  playedCount++;
+                  setTimeout(playBeepLoop, 1000); // 1-second gap between repeats
+                }
+              };
+              playBeepLoop();
+            });
+          }, 1000); // Delay sound by 1.5 seconds
+        }
+
         img.addEventListener('animationend', () => {
           activeAnimals--;
           // Remove the DOM node so it doesn't accumulate
@@ -1370,11 +1369,7 @@
 
       // --- Always activate distractors at trial start ---
       const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
-      if (selections.soundOn) {
-        beepAudio.pause();
-        beepAudio.currentTime = 0;
-        beepAudio.play();
-      }
+      // (Sound block removed; now handled in spawnAnimal)
       if (lightsEnabled) {
         const waveParent = document.getElementById('wave-container').parentNode;
         if (waveParent) {
@@ -1386,11 +1381,9 @@
           }, 600);
         }
       }
-      // Stop distractors after 60% of the stimulus period
+      // Stop visual distractor after 60% of the stimulus period
       setTimeout(() => {
-        if (selections.soundOn) {
-          beepAudio.pause();
-        }
+        // Sound pause now handled by beep loop logic above
         if (lightsEnabled) {
           const waveParent = document.getElementById('wave-container').parentNode;
           if (waveParent) waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
@@ -1508,34 +1501,37 @@
       const inCorrectGuessLeft   = window.incorrectLeft  || 0;
       const missedGuess          = (window.noResponseRight || 0) + (window.noResponseLeft || 0);
 
-      // Compute FracHit and FracCR per new formula
-      let fractHit = 0, fractCR = 0;
-      if (correctGuessRight + inCorrectGuessRight + missedGuess / 2 !== 0) {
-        fractHit = correctGuessRight / (correctGuessRight + inCorrectGuessRight + missedGuess / 2);
-      }
-      if (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2 !== 0) {
-        fractCR = inCorrectGuessLeft / (inCorrectGuessLeft + correctGuessLeft + missedGuess / 2);
-      }
+      // --- D-prime calculation using clamped probabilities and norminv ---
+      const missedPerSide = missedGuess / 2;
+
+      const hits = correctGuessRight;
+      const misses = inCorrectGuessRight + missedPerSide;
+      const fas = inCorrectGuessLeft + missedPerSide;
+      const crs = correctGuessLeft;
+
+      const hitRate = (hits + 0.5) / (hits + misses + 1);
+      const faRate = (fas + 0.5) / (fas + crs + 1);
+
+      const minVal = 0.0001;
+      const maxVal = 0.9999;
+      const boundedHitRate = Math.min(Math.max(hitRate, minVal), maxVal);
+      const boundedFARate = Math.min(Math.max(faRate, minVal), maxVal);
 
       function norminv(p) {
-        if (p === 0) {
-          p = 0.1;
-        }
-        const a1 = -39.69683028665376;
-        const a2 = 220.9460984245205;
-        const a3 = -275.9285104469687;
-        const a4 = 138.357751867269;
-        const a5 = -30.66479806614716;
-        const a6 = 2.506628277459239;
-
-        const t = 1.0 / (1.0 + 0.2316419 * Math.abs(p));
-        const d = 0.3989422804014337 * Math.exp(-p * p / 2.0);
-        const x = ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t;
-        return 1 - d * x;
+        const a1 = -39.69683028665376, a2 = 220.9460984245205, a3 = -275.9285104469687;
+        const a4 = 138.357751867269, a5 = -30.66479806614716, a6 = 2.506628277459239;
+        const b1 = -54.47609879822406, b2 = 161.5858368580409, b3 = -155.6989798598866;
+        const b4 = 66.80131188771972, b5 = -13.28068155288572;
+        const q = p < 0.5 ? p : 1 - p;
+        const t = Math.sqrt(-2 * Math.log(q));
+        const num = (((((a1 * t + a2) * t + a3) * t + a4) * t + a5) * t + a6);
+        const den = ((((b1 * t + b2) * t + b3) * t + b4) * t + b5) * t + 1;
+        const z = num / den;
+        return p < 0.5 ? -z : z;
       }
 
-      const dp1 = norminv(fractHit);
-      const dp2 = norminv(fractCR);
+      const dp1 = norminv(boundedHitRate);
+      const dp2 = norminv(boundedFARate);
       const dprime1 = (dp1 - dp2).toFixed(3);
 
       const sessionData = {
@@ -1686,26 +1682,20 @@
       let interpColor = "green";
       if (canvasId === 'noDistractorChart') {
         if (totalCorrect > 2) {
-          interpretationText = "Good sensory function";
+          interpretationText = "";
           interpColor = "green";
         } else {
-          interpretationText = "Poor sensory function";
+          interpretationText = "";
           interpColor = "red";
         }
       } else if (canvasId === 'auditoryDistractorChart') {
-        if (totalCorrect > 2) {
-          interpretationText = "No attentional issues";
-          interpColor = "green";
-        } else {
-          interpretationText = "Sound-related attentional issues";
-          interpColor = "red";
-        }
+        interpretationText = "";
       } else if (canvasId === 'visualDistractorChart') {
         if (totalCorrect > 2) {
-          interpretationText = "No attentional issues";
+          interpretationText = "";
           interpColor = "green";
         } else {
-          interpretationText = "Visual-related attentional issues";
+          interpretationText = "";
           interpColor = "red";
         }
       }
@@ -1760,27 +1750,15 @@
         },
       });
 
-      // Add interpretation text and arrow below the chart canvas
+      // Add only interpretation text below the chart canvas
       const canvasEl = document.getElementById(canvasId);
-      const interpP = document.createElement('p');
-      interpP.id = `${canvasId}-interp`;
-      interpP.style.color = interpColor;
-      interpP.style.fontWeight = 'bold';
-      interpP.style.marginTop = "10px";
-      interpP.style.marginBottom = "8px";
-      interpP.textContent = interpretationText;
-
-      // Arrow label below interpretation
-      const arrow = document.createElement('p');
-      arrow.style.color = 'blue';
-      arrow.style.fontSize = '0.95em';
-      arrow.style.marginTop = '2px';
-      arrow.style.marginBottom = '18px';
-      arrow.textContent = 'Increasing Difficulty →';
-
-      // Place interp and arrow directly after the canvas (interp below chart, arrow below interp)
-      canvasEl.parentNode.insertBefore(interpP, canvasEl.nextSibling);
-      canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
+      const caption = document.createElement('p');
+      caption.style.color = interpColor;
+      caption.style.fontWeight = 'bold';
+      caption.style.marginTop = "10px";
+      caption.style.marginBottom = "18px";
+      caption.textContent = interpretationText;
+      canvasEl.parentNode.insertBefore(caption, canvasEl.nextSibling);
     }
 
     function toggleSound() {
