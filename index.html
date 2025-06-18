@@ -1166,37 +1166,17 @@
       }
     }
 
-    // Helper to start the visual response countdown after all animals finish
+    // Helper to handle missed response immediately after all animals finish
     function startResponseCountdown() {
       if (isQuitting) return;
-      console.log('All animals have finished moving. Starting visual countdown...');
-      let countdownValue = 3;
-      const countdownEl = document.getElementById('responseCountdown');
-      countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
-
-      if (visualCountdownInterval) clearInterval(visualCountdownInterval);
-
-      visualCountdownInterval = setInterval(() => {
-        if (window.responseGiven || isQuitting) {
-          clearInterval(visualCountdownInterval);
-          countdownEl.textContent = '';
-          return;
-        }
-        countdownValue--;
-        if (countdownValue >= 0) {
-          countdownEl.textContent = `Time left to respond: ${countdownValue}s`;
-        } else {
-          clearInterval(visualCountdownInterval);
-          countdownEl.textContent = '';
-          if (!window.responseGiven) {
-            if (window.correctAnswer === 'Q') window.noResponseRight++;
-            else window.noResponseLeft++;
-            document.getElementById('score').textContent = `Score: ${score}`;
-            console.log("No response after countdown — counted as miss.");
-            handleMissedResponse();
-          }
-        }
-      }, 1000);
+      console.log('All animals have finished moving. Triggering missed response immediately.');
+      if (!window.responseGiven) {
+        if (window.correctAnswer === 'Q') window.noResponseRight++;
+        else window.noResponseLeft++;
+        document.getElementById('score').textContent = `Score: ${score}`;
+        console.log("No response — counted as miss.");
+        handleMissedResponse();
+      }
     }
 
     // Step 4: Use Adaptive Difficulty Inside runTask()
