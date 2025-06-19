@@ -526,7 +526,22 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <script>
-    // Masked typing effect for password fields
+    /**
+     * ================================
+     *  Sensory Safari Main JS Module
+     * ================================
+     * Responsibilities:
+     * - User authentication (login, registration, sign out)
+     * - Game initialization and parameter selection
+     * - Task/gameplay logic and adaptive difficulty
+     * - Feedback display after each trial
+     * - Session logging and results visualization with Firebase Firestore
+     * - Results and metrics visualization (charts)
+     * - Utility functions: event listeners, UI linkages, image preloading
+     */
+    // === USER AUTHENTICATION ===
+
+    // Masked typing effect for password fields, so last char briefly shows then hides
     function handleMaskedTyping(input) {
       let lastValue = "";
       input.addEventListener("input", () => {
@@ -635,16 +650,19 @@
     </div>
   </div>
   <script>
+    // Handles switching to the registration form view
     function showRegister() {
       document.getElementById('authContainer').style.display = 'none';
       document.getElementById('registerPage').style.display = 'block';
     }
 
+    // Switches back to the login form view
     function showLogin() {
       document.getElementById('registerPage').style.display = 'none';
       document.getElementById('authContainer').style.display = 'block';
     }
 
+    // Submits registration info and creates a new user in Firestore
     function submitRegistration() {
       const name = document.getElementById('regName').value.trim();
       const rawUsername = document.getElementById('regUsername').value.trim();
@@ -842,13 +860,16 @@
     // Step 1: Track total number of tries for this game session
     let totalTries = 0;   // total number of trials for this game session
 
-    // Link sliders to values
+    // === GAME INITIALIZATION AND START ===
+
+    // Link slider UI to value display
     ['numTries', 'stimDuration', 'outcomeDuration'].forEach(id => {
       const input = document.getElementById(id);
       const span = document.getElementById(id + 'Value');
       input.addEventListener('input', () => span.textContent = input.value);
     });
 
+    // Handle animal selection UI
     document.querySelectorAll('.animal-option').forEach(el => {
       el.addEventListener('click', () => {
         document.querySelectorAll('.animal-option').forEach(opt => opt.classList.remove('selected'));
@@ -993,23 +1014,24 @@
         loginButton.textContent = "Login";
       });
     }
-  // --------- IMAGE PRELOADING ---------
-  // Preload all key images to reduce lag
-  const preloadImages = [
-    'Images/Background.jpeg',
-    'Images/Background_1.jpeg',
-    'Images/Background_2.jpeg',
-    'Images/Background_3.jpeg',
-    'Images/Cat/cat.jpeg',
-    'Images/Owl/owl_on_branch.jpeg',
-    'Images/Turtle/turtle.jpeg',
-    'Images/Monkey/monkey_before_swing.jpeg'
-  ];
-  preloadImages.forEach(src => {
-    const img = new Image();
-    img.src = src;
-  });
+    // === UTILITY: IMAGE PRELOADING ===
+    // Preload all images to avoid lag
+    const preloadImages = [
+      'Images/Background.jpeg',
+      'Images/Background_1.jpeg',
+      'Images/Background_2.jpeg',
+      'Images/Background_3.jpeg',
+      'Images/Cat/cat.jpeg',
+      'Images/Owl/owl_on_branch.jpeg',
+      'Images/Turtle/turtle.jpeg',
+      'Images/Monkey/monkey_before_swing.jpeg'
+    ];
+    preloadImages.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
 
+    // Starts the game by collecting all user selections and showing the countdown
     function startGame() {
       const playerNameInput = loggedInUser;
       const selectedDifficulty = difficultyLevelsMap[+document.getElementById('difficultySlider').value];
@@ -1031,7 +1053,7 @@
         playerName: playerNameInput
       };
       tries = selections.numTries;
-      // Step 2: Store for final score display
+      // Store for final score display
       totalTries = selections.numTries;
       document.getElementById('home').style.display = 'none';
       document.getElementById('howItWorks').style.display = 'none'; // hide instructions
@@ -1039,6 +1061,7 @@
       startCountdown();
     }
 
+    // Shows a countdown before the game starts, then launches the first task
     function startCountdown() {
       let count = 3;
       const el = document.getElementById('countdownTimer');
@@ -1069,7 +1092,9 @@
     let currentDifficulty = 'medium'; // Adaptive starts here
     let performanceTracker = []; // Track 'correct', 'wrong', or 'miss'
 
-    // Step 2: Track Performance After Each Trial
+    // === TASK LOGIC AND RESPONSE HANDLING ===
+
+    // Handles user response button press, evaluates correctness, updates score and feedback
     function handleResponse(key) {
       document.getElementById('responseCountdown').textContent = '';
       console.log('User Pressed:', key);
@@ -1131,6 +1156,7 @@
       showFeedbackImage(isCorrect); // Show feedback image after response
     }
 
+    // Handles when the user misses a response (timeout)
     function handleMissedResponse() {
       // Stop any active sound interval and reset beep audio
       if (window.activeSoundInterval) {
@@ -1148,7 +1174,9 @@
       showFeedbackImage(false); // Show incorrect feedback image
     }
 
-    // Step 3: Adjust Difficulty Dynamically
+    // === ADAPTIVE DIFFICULTY LOGIC ===
+
+    // Adjusts difficulty up/down based on last two responses (for adaptive mode)
     function adjustDifficulty() {
       const lastTwo = performanceTracker.slice(-2); // Last 2 responses
       const index = difficultyLevels.indexOf(currentDifficulty);
@@ -1167,6 +1195,7 @@
     }
 
     // Helper to handle missed response immediately after all animals finish
+    // Starts the countdown for response after all animals have finished moving (for missed responses)
     function startResponseCountdown() {
       if (isQuitting) return;
       console.log('All animals have finished moving. Triggering missed response immediately.');
@@ -1180,6 +1209,7 @@
     }
 
     // Step 4: Use Adaptive Difficulty Inside runTask()
+    // Runs a single task/trial: sets up animals, distractors, and handles user input
     function runTask() {
       if (isQuitting) return;
       window.responseGiven = false;
@@ -1452,6 +1482,9 @@
       document.getElementById('responseCountdown').textContent = '';
     }
 
+    // === FEEDBACK DISPLAY ===
+
+    // Plays the feedback image (correct or incorrect) after each trial
     function showFeedbackImage(isCorrect) {
       if (isQuitting) return;
       const feedbackContainer = document.createElement('div');
@@ -1508,7 +1541,9 @@
     }
     ------------- END PDF EXPORT DISABLED -------------*/
 
-    // --- Firebase Firestore session logging ---
+    // === SESSION LOGGING TO FIREBASE ===
+
+    // Logs the current session's data to Firebase Firestore
     function logSessionToFirestore(playerName) {
       const totalCorrect = trialResults.filter(t => t.correct).length;
       const formattedTrialDetails = trialResults.map((trial, i) => ({
@@ -1591,6 +1626,9 @@
     }
     // --- End Firebase Firestore session logging ---
 
+    // === RESULTS VISUALIZATION ===
+
+    // Displays the results charts for the most recent session (per-distractor)
     function displayResultsChart() {
       const chartContainer = document.getElementById('chartContainer');
       document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
@@ -1678,6 +1716,7 @@
       }
     }
 
+    // Renders a single chart for a given distractor type (correct/incorrect per group)
     function renderChart(canvasId, title, data, thresholdLabel) {
       // Remove old interpretation and arrow if present (done by displayResultsChart, but in case of rerender)
       let interp = document.getElementById(`${canvasId}-interp`);
@@ -1799,6 +1838,7 @@
       canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
     }
 
+    // Toggles sound distractor on/off in settings
     function toggleSound() {
       const btn = document.getElementById('soundToggleBtn');
       btn.classList.toggle('active');
@@ -1811,15 +1851,18 @@
       }
     }
 
+    // Shows the feedback form (after game over)
     function showFeedbackForm() {
       document.getElementById('gameOver').style.display = 'none';
       document.getElementById('feedbackForm').style.display = 'block';
     }
 
+    // Submits user feedback (placeholder)
     function submitFeedback() {
       alert("Feedback submitted! Thank you.");
       // Here you can collect form data and send it to a server or database.
     }
+    // Toggles visual distractor (blinking lights) on/off in settings
     function toggleLights() {
       const btn = document.getElementById('lightsToggleBtn');
       btn.classList.toggle('active');
@@ -1842,6 +1885,7 @@
       }
     }
 
+    // Quits the game and returns to the home screen, resetting state
     function quitGame() {
       // Hide the test/game over screens, show the home screen
       isQuitting = true;
@@ -1854,6 +1898,7 @@
       document.getElementById("signOutBtn").style.display = "block";
     }
 
+    // Resets all relevant game state variables to allow a fresh game
     function resetGameState() {
       isQuitting = false;
       currentTry = 0;
@@ -1881,6 +1926,7 @@
       countdownStarted = false;
     }
 
+    // Resets state and returns to the home screen after a game ends
     function resetGameAndStart() {
       resetGameState();
       document.getElementById('gameOver').style.display = 'none';
@@ -1889,6 +1935,7 @@
       document.getElementById("signOutBtn").style.display = "block";
     }
 
+    // Signs out the current user and returns to the login screen
     function signOut() {
       loggedInUser = null;
       // Hide sign out button
@@ -1905,41 +1952,48 @@
     }
   window.quitGame = quitGame;
 
-  // Explicitly bind Quit button event handler after DOM loads
-  document.addEventListener("DOMContentLoaded", () => {
-    const quitBtn = document.querySelector("#test button[onclick='quitGame()']");
-    if (quitBtn) {
-      quitBtn.addEventListener("click", quitGame);
+    // === UTILITY: EVENT LISTENERS AND DOM HOOKS ===
+
+    // Bind Quit button, password masking, and Enter key login after DOM loads
+    document.addEventListener("DOMContentLoaded", () => {
+      // Bind quit button event
+      const quitBtn = document.querySelector("#test button[onclick='quitGame()']");
+      if (quitBtn) {
+        quitBtn.addEventListener("click", quitGame);
+      }
+      // Masked typing for password fields
+      handleMaskedTyping(document.getElementById('authPassword'));
+      handleMaskedTyping(document.getElementById('regPassword'));
+
+      // Add Enter key login support
+      const loginForm = document.getElementById("login-form");
+      const loginButton = document.getElementById("login-btn");
+      if (loginForm && loginButton) {
+        loginForm.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault(); // Prevent form submission if needed
+            loginButton.click();    // Trigger the login
+          }
+        });
+      }
+    });
+    // === RESULTS VISUALIZATION: OVERALL SESSION HISTORY ===
+
+    // Shows the overall session history results page
+    function viewOverallResults() {
+      document.getElementById("gameOver").style.display = "none";
+      document.getElementById("overallResultsPage").style.display = "block";
+      loadOverallResults();
     }
-    // Masked typing for password fields
-    handleMaskedTyping(document.getElementById('authPassword'));
-    handleMaskedTyping(document.getElementById('regPassword'));
 
-    // Add Enter key login support
-    const loginForm = document.getElementById("login-form");
-    const loginButton = document.getElementById("login-btn");
-    if (loginForm && loginButton) {
-      loginForm.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault(); // Prevent form submission if needed
-          loginButton.click();    // Trigger the login
-        }
-      });
+    // Returns from the overall results page to the end screen
+    function returnToEndScreen() {
+      document.getElementById("overallResultsPage").style.display = "none";
+      document.getElementById("gameOver").style.display = "block";
     }
-  });
-  // --------- OVERALL RESULTS FUNCTIONS ---------
-  function viewOverallResults() {
-    document.getElementById("gameOver").style.display = "none";
-    document.getElementById("overallResultsPage").style.display = "block";
-    loadOverallResults();
-  }
 
-  function returnToEndScreen() {
-    document.getElementById("overallResultsPage").style.display = "none";
-    document.getElementById("gameOver").style.display = "block";
-  }
-
-  function loadOverallResults() {
+    // Loads and renders the overall session history from Firestore for the user
+    function loadOverallResults() {
     const ctx = document.getElementById('overallResultsChart').getContext('2d');
     // Debug log at start of loading sessions
     console.log("Attempting to load sessions for:", loggedInUser);
