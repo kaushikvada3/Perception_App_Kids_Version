@@ -1077,6 +1077,7 @@
         animal: selectedAnimal,
         playerName: playerNameInput
       };
+      selections.lightsOn = document.getElementById('lightsToggleBtn').classList.contains('active');
       tries = selections.numTries;
       // Store for final score display
       totalTries = selections.numTries;
@@ -1153,6 +1154,11 @@
       activeAnimals = 0;
       countdownStarted = false;
 
+      // Record latency for this trial
+      window.responseGiven = true;
+      const latency = (Date.now() - trialStartTime) / 1000;
+      if (trialResults.length > 0) trialResults[trialResults.length - 1].latency = latency;
+
       const lastTrial = trialResults[trialResults.length - 1];
       let isCorrect = false;
 
@@ -1195,6 +1201,8 @@
       console.log('No response given.');
       const lastTrial = trialResults[trialResults.length - 1];
       lastTrial.correct = false; // Mark the last trial as incorrect
+      // Record latency as null for missed responses
+      if (trialResults.length > 0) trialResults[trialResults.length - 1].latency = null;
       performanceTracker.push('wrong');
       if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       adjustDifficulty(); // Adjust difficulty dynamically
@@ -1240,6 +1248,8 @@
     function runTask() {
       if (isQuitting) return;
       window.responseGiven = false;
+      // Track trial start time for latency measurement
+      trialStartTime = Date.now();
       // Reset animal trackers at the start of each trial
       activeAnimals = 0;
       countdownStarted = false;
@@ -1611,7 +1621,8 @@
       const formattedTrialDetails = trialResults.map((trial, i) => ({
         trial: i + 1,
         correct: trial.correct,
-        type: trial.type
+        type: trial.type,
+        latency: trial.latency
       }));
 
       // New fields for sessionData
@@ -1649,7 +1660,12 @@
 
       const dp1 = norminv(fractHit);
       const dp2 = norminv(fractCR);
-      const dprime1 = (dp1 - dp2).toFixed(3);
+      let dprime1;
+      if (fractHit === 0 && fractCR === 0 && totalCorrect === selections.numTries) {
+        dprime1 = "max";
+      } else {
+        dprime1 = (dp1 - dp2).toFixed(3);
+      }
 
       const sessionData = {
         playerName: loggedInUser,
@@ -1666,7 +1682,10 @@
         correctGuessLeft: correctGuessLeft,
         inCorrectGuessLeft: inCorrectGuessLeft,
         missedGuess: missedGuess,
-        metricScore: dprime1
+        metricScore: dprime1,
+        soundOn: selections.soundOn,
+        lightsOn: selections.lightsOn,
+        animal: selections.animal
       };
 
       const userRef = db.collection("users").doc(loggedInUser);
