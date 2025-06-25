@@ -1126,13 +1126,14 @@
       console.log('Correct Answer:', window.correctAnswer);
       clearInterval(visualCountdownInterval);
 
-      // Stop any active sound interval and reset beep audio
-      if (window.activeSoundInterval) {
-        clearInterval(window.activeSoundInterval);
-        window.activeSoundInterval = null;
-        beepAudio.pause();
-        beepAudio.currentTime = 0;
+      // Stop sound stop timeout and reset beep audio (NEW LOGIC)
+      if (window.soundStopTimeout) {
+        clearTimeout(window.soundStopTimeout);
+        window.soundStopTimeout = null;
       }
+      beepAudio.pause();
+      beepAudio.currentTime = 0;
+      beepAudio.loop = false;
 
       // Pause all animal animations
       document.querySelectorAll('.moving-animal').forEach(animal => {
@@ -1183,13 +1184,14 @@
 
     // Handles when the user misses a response (timeout)
     function handleMissedResponse() {
-      // Stop any active sound interval and reset beep audio
-      if (window.activeSoundInterval) {
-        clearInterval(window.activeSoundInterval);
-        window.activeSoundInterval = null;
-        beepAudio.pause();
-        beepAudio.currentTime = 0;
+      // Stop sound stop timeout and reset beep audio (NEW LOGIC)
+      if (window.soundStopTimeout) {
+        clearTimeout(window.soundStopTimeout);
+        window.soundStopTimeout = null;
       }
+      beepAudio.pause();
+      beepAudio.currentTime = 0;
+      beepAudio.loop = false;
       console.log('No response given.');
       const lastTrial = trialResults[trialResults.length - 1];
       lastTrial.correct = false; // Mark the last trial as incorrect
@@ -1245,10 +1247,16 @@
       beepAudio.load(); // Ensure audio is ready from the start
       // Declare global activeSoundInterval before using it
       window.activeSoundInterval = null;
+      // Clear any previous sound stop timeout before starting a new trial
+      if (window.soundStopTimeout) {
+        clearTimeout(window.soundStopTimeout);
+        window.soundStopTimeout = null;
+      }
       if (currentTry >= tries) {
         if (selections.soundOn) {
           beepAudio.pause();
           beepAudio.currentTime = 0;
+          beepAudio.loop = false;
         }
         document.getElementById('test').style.display = 'none';
         document.getElementById('gameOver').style.display = 'block';
@@ -1469,31 +1477,27 @@
         }
       }
       if (selections.soundOn) {
-        beepAudio.load(); // Ensure sound is reloaded on first task
-        const stimDuration = selections.stimDuration * 1000;
-        const soundStartDelay = 1500;
-        const soundDuration = stimDuration * 0.6;
-        const repeatInterval = 1000;
+        beepAudio.loop = true;
+        beepAudio.currentTime = 0;
+        beepAudio.play().catch(err => console.error("Audio play failed:", err));
 
-        setTimeout(() => {
-          let elapsed = 0;
-          window.activeSoundInterval = setInterval(() => {
-            if (elapsed >= soundDuration) {
-              clearInterval(window.activeSoundInterval);
-              window.activeSoundInterval = null;
-              return;
-            }
-            beepAudio.pause();
-            beepAudio.currentTime = 0;
-            beepAudio.play().catch(err => console.error("Audio play failed:", err));
-            elapsed += repeatInterval;
-          }, repeatInterval);
-        }, soundStartDelay);
+        const stimDurationMs = selections.stimDuration * 1000;
+        const soundDurationLimit = stimDurationMs * 0.66;
+
+        // Stop sound at 66% of stimDuration
+        window.soundStopTimeout = setTimeout(() => {
+          beepAudio.pause();
+          beepAudio.currentTime = 0;
+          beepAudio.loop = false;
+        }, soundDurationLimit);
       }
       // Stop distractors after 60% of the stimulus period
       setTimeout(() => {
         if (selections.soundOn) {
+          // (Sound is stopped by the timeout above, but as a backup:)
           beepAudio.pause();
+          beepAudio.currentTime = 0;
+          beepAudio.loop = false;
         }
         if (lightsEnabled) {
           const waveParent = document.getElementById('wave-container').parentNode;
