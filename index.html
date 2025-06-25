@@ -1390,8 +1390,8 @@
       // Fixed spacing (ms between spawns) for all difficulties
       const spawnGap = 500;  // adjust to taste
 
-      // Helper function to spawn one animal, with animation duration parameter
-      function spawnAnimal(animMs) {
+      // Helper function to spawn one animal, uses fixed speed for animation duration
+      function spawnAnimal() {
         activeAnimals++; // one more animal on screen
         const img = document.createElement('img');
         img.src = animalImageMap[selectedAnimal];
@@ -1403,7 +1403,12 @@
           : '120%';
 
         img.style.width = '220px';
-        img.style.animation = `${animClass} ${animMs}ms linear 0ms forwards`;
+        // Calculate speed so that at stimDuration = 4 sec, animal crosses 1600px at constant speed.
+        const totalDistancePx = 1600;
+        const defaultStimDurationSec = 4;
+        const SPEED_PX_PER_SEC = totalDistancePx / defaultStimDurationSec;
+        const animationDuration = (totalDistancePx / SPEED_PX_PER_SEC) * 1000; // ms
+        img.style.animation = `${animClass} ${animationDuration}ms linear 0ms forwards`;
         img.style.transform = `rotate(${angle}deg)`;
         img.style.zIndex = 5;
 
@@ -1419,8 +1424,8 @@
         });
       }
 
-      // Start spawning immediately, first animal gets full duration
-      spawnAnimal(stimDuration);
+      // Start spawning immediately, first animal gets full duration (now fixed speed)
+      spawnAnimal();
 
       // --- Always activate distractors at trial start ---
       const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
@@ -1520,8 +1525,8 @@
           return;
         }
 
-        // Spawn an animal whose animation lasts exactly until the stimulus window ends
-        spawnAnimal(stimDuration);
+        // Spawn an animal at fixed speed
+        spawnAnimal();
       }, spawnGap);
 
       console.log(`Trial ${currentTry + 1}: Difficulty = ${usedDifficulty}`);
