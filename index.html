@@ -1489,17 +1489,19 @@
       if (selections.soundOn) {
         beepAudio.loop = true;
         beepAudio.currentTime = 0;
-        beepAudio.play().catch(err => console.error("Audio play failed:", err));
+        setTimeout(() => {
+          beepAudio.play().catch(err => console.error("Audio play failed:", err));
+        }, 400);
 
         const stimDurationMs = selections.stimDuration * 1000;
         const soundDurationLimit = stimDurationMs * 0.66;
 
-        // Stop sound at 66% of stimDuration
+        // Stop sound at 66% of stimDuration, accounting for delayed start
         window.soundStopTimeout = setTimeout(() => {
           beepAudio.pause();
           beepAudio.currentTime = 0;
           beepAudio.loop = false;
-        }, soundDurationLimit);
+        }, soundDurationLimit + 400);
       }
       // Stop distractors after 60% of the stimulus period
       setTimeout(() => {
@@ -1517,7 +1519,7 @@
             backgroundCycleInterval = null;
           }
         }
-      }, stimDuration * 0.6);
+      }, (stimDuration * 0.6) + 400);
       // Log distractor type for this trial
       const distractorType = selections.soundOn && lightsEnabled
         ? 'both'
@@ -1771,9 +1773,9 @@
           let label;
           if (difficultyMode === 'adaptive') {
             const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][index % 4];
-            label = `${difficultyGroup} #${Math.floor(index / 4) + 1}`;
+            label = `${difficultyGroup} difficulty`;
           } else {
-            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} #${index + 1}`;
+            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} difficulty`;
           }
           labels.push(label);
           correctData.push(group.correct);
@@ -1873,7 +1875,7 @@
           plugins: {
             title: {
               display: true,
-              text: `${title} (${selections.difficulty === 'adaptive' ? 'Increasing Difficulty' : selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1)})`,
+              text: `${title} (${selections.difficulty === 'adaptive' ? 'Increasing Difficulty' : selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1) + ' difficulty'})`,
               font: { size: 18 },
             },
             annotation: {
