@@ -779,7 +779,7 @@
   </div>
 
   <div id="test">
-    <h2>Task <span id="taskNum">1</span></h2>
+    <h2><span id="taskNum">1</span></h2>
     <div style="display: flex; align-items: stretch; justify-content: center; height: 600px;">
       <div style="flex-shrink: 0; display: flex; align-items: center;">
         <button onclick="handleResponse('P')" style="height: 100%; width: 100px; font-size: 3em; background-color: #005f73; color: #ffffff; border: 3px solid #ffffff; border-radius: 12px; box-shadow: 0 0 15px #000;">⬅</button>
@@ -831,6 +831,9 @@
     </div>
     <button onclick="returnToEndScreen()" style="display: block; margin: 20px auto; background-color: #1E90FF; color: white; padding: 10px 25px; border-radius: 10px; border: none; font-size: 1.1em;">
       Back
+    </button>
+    <button id="goBackButton" style="display: block; margin: 20px auto; background-color: #28a745; color: white; padding: 10px 25px; border-radius: 10px; border: none; font-size: 1.1em;">
+      Back to Home
     </button>
   </div>
 
@@ -1346,7 +1349,7 @@
         return;
       }
 
-      document.getElementById('taskNum').textContent = currentTry + 1;
+      document.getElementById('taskNum').textContent = `${currentTry + 1}`;
 
       const waveContainer = document.getElementById('wave-container');
       waveContainer.innerHTML = ''; // clear previous animals
@@ -1554,6 +1557,12 @@
 
       // No timeout-based countdown trigger needed; countdown starts after last animal's animationend.
       document.getElementById('responseCountdown').textContent = '';
+
+      // Update task label with just the trial number if a separate label exists
+      const taskLabel = document.getElementById("taskLabel");
+      if (taskLabel) {
+        taskLabel.textContent = `${currentTry + 1}`;
+      }
     }
 
     // === FEEDBACK DISPLAY ===
@@ -2057,6 +2066,14 @@
             event.preventDefault(); // Prevent form submission if needed
             loginButton.click();    // Trigger the login
           }
+        });
+      }
+      // Add goBackButton event for overallResultsPage
+      const goBackBtn = document.getElementById("goBackButton");
+      if (goBackBtn) {
+        goBackBtn.addEventListener("click", () => {
+          document.getElementById("overallResultsPage").style.display = "none";
+          document.getElementById("home").style.display = "block";
         });
       }
     });
