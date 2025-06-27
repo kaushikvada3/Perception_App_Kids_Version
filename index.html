@@ -1705,7 +1705,7 @@
         if (doc.exists) {
           const currentCount = doc.data().sessionCount || 0;
           const newCount = currentCount + 1;
-          const trialName = `Trial #${newCount}`;
+          const trialName = `Game #${newCount}`;
 
           userRef.collection("sessions").doc(trialName).set(sessionData).then(() => {
             console.log("Session stored as:", trialName);
@@ -2121,7 +2121,8 @@
 
       sortedDocs.forEach(doc => {
         const data = doc.data();
-        labels.push(`${doc.id} (${data.difficulty.charAt(0).toUpperCase() + data.difficulty.slice(1)})`);
+        const gameId = doc.id.replace("Trial", "Game");
+        labels.push(`${gameId} (${data.difficulty.charAt(0).toUpperCase() + data.difficulty.slice(1)})`);
         const correct = parseInt(data.score.split("/")[0]);
         const total = parseInt(data.score.split("/")[1]);
         scores.push(correct);
