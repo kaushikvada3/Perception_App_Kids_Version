@@ -278,9 +278,9 @@
     #wave-container {
       position: relative;
       height: 600px;
-      border: 2px solid #fff;
+      border: none;
       margin: 20px;
-      background-color: rgba(255, 255, 255, 0.6); /* 60% white translucent */
+      background-color: transparent;
       overflow: hidden;
       width: 90%;
       max-width: 1000px;
@@ -290,11 +290,11 @@
     }
     .corner-light {
       position: absolute;
-      width: 20px;
-      height: 20px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background-color: yellow;
-      box-shadow: 0 0 10px yellow;
+      box-shadow: 0 0 20px yellow;
       display: none;
     }
     .corner-light.top-left {
@@ -416,6 +416,8 @@
       position: relative;
       height: 600px;
       overflow: hidden;
+      background: transparent !important;
+      border: none !important;
     }
     .moving-animal {
       position: absolute;
@@ -597,6 +599,57 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    // Correct the score metric calculation logic
+    function displayFinalScore() {
+      const totalCorrect = trialResults.filter(tr => tr.correct).length;
+      const effectiveTotal = totalTries || selections.numTries || tries; // Ensure denominator is never zero
+
+      // Calculate d-prime metric
+      const correctGuessRight = window.correctRight || 0;
+      const incorrectGuessRight = window.incorrectRight || 0;
+      const correctGuessLeft = window.correctLeft || 0;
+      const incorrectGuessLeft = window.incorrectLeft || 0;
+      const missedGuess = (window.noResponseRight || 0) + (window.noResponseLeft || 0);
+
+      let fractHit = 0, fractCR = 0;
+      if (correctGuessRight + incorrectGuessRight + missedGuess / 2 !== 0) {
+        fractHit = correctGuessRight / (correctGuessRight + incorrectGuessRight + missedGuess / 2);
+      }
+      if (incorrectGuessLeft + correctGuessLeft + missedGuess / 2 !== 0) {
+        fractCR = incorrectGuessLeft / (incorrectGuessLeft + correctGuessLeft + missedGuess / 2);
+      }
+
+      function norminv(p) {
+        if (p === 0) p = 0.1; // Prevent zero input
+        const a1 = -39.69683028665376, a2 = 220.9460984245205, a3 = -275.9285104469687;
+        const a4 = 138.357751867269, a5 = -30.66479806614716, a6 = 2.506628277459239;
+        const t = 1.0 / (1.0 + 0.2316419 * Math.abs(p));
+        const d = 0.3989422804014337 * Math.exp(-p * p / 2.0);
+        const x = ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t;
+        return 1 - d * x;
+      }
+
+      const dp1 = norminv(fractHit);
+      const dp2 = norminv(fractCR);
+      const dprime1 = (dp1 - dp2).toFixed(3);
+
+      // Update final score display
+      document.getElementById('finalScore').textContent =
+        `Score: ${totalCorrect} / ${effectiveTotal} | Metric: ${dprime1}`;
+    }
+
+    // Call displayFinalScore at the end of the game
+    function runTask() {
+      // ...existing code...
+      if (currentTry >= tries) {
+        document.getElementById('test').style.display = 'none';
+        document.getElementById('gameOver').style.display = 'block';
+        displayFinalScore(); // Ensure score metric is displayed correctly
+        return;
+      }
+      // ...existing code...
+    }
   </script>
   <!--
   <div id="flashingLights" class="flashing-lights" style="display: none;">
@@ -780,11 +833,11 @@
 
   <div id="test">
     <h2><span id="taskNum">1</span></h2>
-    <div style="display: flex; align-items: stretch; justify-content: center; height: 600px;">
+    <div style="display: flex; align-items: stretch; justify-content: center; height: 600px; background: transparent !important; border: none !important;">
       <div style="flex-shrink: 0; display: flex; align-items: center;">
         <button onclick="handleResponse('P')" style="height: 100%; width: 100px; font-size: 3em; background-color: #005f73; color: #ffffff; border: 3px solid #ffffff; border-radius: 12px; box-shadow: 0 0 15px #000;">⬅</button>
       </div>
-      <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: rgba(255, 255, 255, 0.6); border-radius: 10px;"></div>
+      <div id="wave-container" class="animal-row" style="flex-grow: 1; margin: 0 10px; background-color: transparent !important; border-radius: 10px; border: none !important;"></div>
       <div style="flex-shrink: 0; display: flex; align-items: center;">
         <button onclick="handleResponse('Q')" style="height: 100%; width: 100px; font-size: 3em; background-color: #6a4c93; color: #ffffff; border: 3px solid #ffffff; border-radius: 12px; box-shadow: 0 0 15px #000;">➡</button>
       </div>
@@ -1273,6 +1326,7 @@
         }
         document.getElementById('test').style.display = 'none';
         document.getElementById('gameOver').style.display = 'block';
+        displayFinalScore(); // Ensure score metric is displayed correctly
         displayResultsChart(); // Display results chart at the end
         
         // Map variables to new naming
@@ -1448,46 +1502,82 @@
       // Start spawning immediately, first animal gets full duration (now fixed speed)
       spawnAnimal();
 
-      // --- Always activate distractors at trial start ---
+      // --- Visual Distractor: Four lights per corner with color flashes ---
       const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
       if (lightsEnabled) {
-        // Add light bulbs to the corners
-        const corners = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-        corners.forEach(corner => {
-          const light = document.createElement('div');
-          light.className = `corner-light ${corner}`;
-          waveContainer.appendChild(light);
+        // Remove any existing .corner-light from previous trials
+        document.querySelectorAll('.corner-light').forEach(el => el.remove());
+
+        // Arrange lights in 2x2 grids per corner
+        const corners = [
+          { baseTop: '10px', baseLeft: '10px' },    // Top-left
+          { baseTop: '10px', baseRight: '10px' },   // Top-right
+          { baseBottom: '10px', baseLeft: '10px' }, // Bottom-left
+          { baseBottom: '10px', baseRight: '10px' } // Bottom-right
+        ];
+        const cornerColors = [
+          ['red', 'yellow', 'orange'],
+          ['blue', 'cyan', 'aqua'],
+          ['green', 'lime', 'springgreen'],
+          ['purple', 'magenta', 'violet']
+        ];
+        let cornerLightIntervals = [];
+
+        corners.forEach((corner, i) => {
+          const colors = cornerColors[i];
+          for (let row = 0; row < 2; row++) {
+            for (let col = 0; col < 2; col++) {
+              const light = document.createElement('div');
+              light.className = 'corner-light';
+              Object.assign(light.style, {
+                position: 'absolute',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                display: 'block',
+                backgroundColor: 'yellow',
+                boxShadow: '0 0 10px yellow'
+              });
+
+              if ('baseTop' in corner) light.style.top = `calc(${corner.baseTop} + ${row * 18}px)`;
+              if ('baseBottom' in corner) light.style.bottom = `calc(${corner.baseBottom} + ${row * 18}px)`;
+              if ('baseLeft' in corner) light.style.left = `calc(${corner.baseLeft} + ${col * 18}px)`;
+              if ('baseRight' in corner) light.style.right = `calc(${corner.baseRight} + ${col * 18}px)`;
+
+              waveContainer.appendChild(light);
+
+              const interval = setInterval(() => {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                light.style.backgroundColor = color;
+                light.style.boxShadow = `0 0 10px ${color}`;
+              }, 500 + Math.random() * 200);
+              cornerLightIntervals.push(interval);
+            }
+          }
         });
-
-        // Alternate colors for lights
-        const colors = ['blue', 'yellow', 'green', 'red'];
-        let colorIndex = 0;
-        const lightDuration = stimDuration * 0.6;
-
-        const colorInterval = setInterval(() => {
-          document.querySelectorAll('.corner-light').forEach(el => {
-            el.style.backgroundColor = colors[colorIndex];
-            el.style.boxShadow = `0 0 10px ${colors[colorIndex]}`;
-          });
-          colorIndex = (colorIndex + 1) % colors.length;
-        }, 500); // Change color every 500ms
-
         // Show lights for 60% of the stimulus duration
-        document.querySelectorAll('.corner-light').forEach(el => el.style.display = 'block');
+        const lightDuration = stimDuration * 0.6;
         setTimeout(() => {
           document.querySelectorAll('.corner-light').forEach(el => el.style.display = 'none');
-          clearInterval(colorInterval); // Stop alternating colors
+          // Clear intervals
+          cornerLightIntervals.forEach(interval => clearInterval(interval));
         }, lightDuration);
 
-        const waveParent = document.getElementById('wave-container').parentNode;
-        if (waveParent) {
-          currentBackgroundIndex = 0;
-          if (backgroundCycleInterval) clearInterval(backgroundCycleInterval);
-          backgroundCycleInterval = setInterval(() => {
-            waveParent.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
-            currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
-          }, 600);
+        // Preload and cache all background images once (only once)
+        if (!window.preloadedBackgrounds) {
+          window.preloadedBackgrounds = backgroundImages.map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+          });
         }
+
+        // Start from current image without resetting to index 0 (to avoid flash)
+        if (backgroundCycleInterval) clearInterval(backgroundCycleInterval);
+        backgroundCycleInterval = setInterval(() => {
+          document.body.style.backgroundImage = `url('${backgroundImages[currentBackgroundIndex]}')`;
+          currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+        }, 600);
       }
       if (selections.soundOn) {
         beepAudio.loop = true;
@@ -1515,8 +1605,8 @@
           beepAudio.loop = false;
         }
         if (lightsEnabled) {
-          const waveParent = document.getElementById('wave-container').parentNode;
-          if (waveParent) waveParent.style.backgroundImage = "url('Images/Background.jpeg')";
+          // Reset background on the body, not wave-container's parent
+          document.body.style.backgroundImage = "url('Images/Background.jpeg')";
           if (backgroundCycleInterval) {
             clearInterval(backgroundCycleInterval);
             backgroundCycleInterval = null;
@@ -1969,10 +2059,8 @@
           clearInterval(backgroundCycleInterval);
           backgroundCycleInterval = null;
           currentBackgroundIndex = 0;
-          const waveContainer = document.getElementById('wave-container');
-          if (waveContainer) {
-            waveContainer.style.backgroundImage = "url('Images/Background.jpeg')";
-          }
+          // Remove dynamic background from body
+          document.body.style.backgroundImage = "url('Images/Background.jpeg')";
         }
       }
     }
@@ -2016,6 +2104,8 @@
       }
       activeAnimals = 0;
       countdownStarted = false;
+      // Always reset body background to default after game resets
+      document.body.style.backgroundImage = "url('Images/Background.jpeg')";
     }
 
     // Resets state and returns to the home screen after a game ends
