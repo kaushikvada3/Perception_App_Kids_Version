@@ -8,6 +8,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sensory Safari</title>
   <style>
+    /* --- Results Timeline & Animations --- */
+    .timeline-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .result-card {
+      background: rgba(255,255,255,0.95);
+      color: #000; border-radius: 12px; padding: 12px 12px 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+      transform: translateY(10px) scale(0.98); opacity: 0; animation: cardIn 420ms ease forwards; transition: transform 180ms ease;
+      cursor: pointer; border-left: 6px solid transparent;
+    }
+    .result-card:hover { transform: translateY(0) scale(1.02); }
+    .result-card.correct { border-left-color: #2ecc71; }
+    .result-card.incorrect { border-left-color: #e74c3c; }
+    .result-card.miss { border-left-color: #f1c40f; }
+    .result-card h4 { margin: 0 0 6px; font-size: 1.05em; }
+    .result-card .meta { font-size: 0.85em; color: #333; line-height: 1.25; }
+    .result-card .badge { display:inline-block; padding:2px 8px; border-radius: 10px; font-size: 0.75em; margin-right: 6px; }
+    .badge.type-none { background:#ecf0f1; color:#34495e; }
+    .badge.type-sound { background:#d6f5f5; color:#0e5a5a; }
+    .badge.type-visual { background:#fbe6ff; color:#6a1b9a; }
+    .badge.type-both { background:#ffe8d6; color:#8e4400; }
+    .result-card .details { margin-top: 8px; display: none; font-size: 0.85em; }
+    .result-card.open .details { display: block; }
+    @keyframes cardIn { to { transform: translateY(0) scale(1); opacity: 1; } }
     #registerPage {
       max-width: 700px;
       width: 90%;
@@ -450,6 +472,27 @@
       0% { left: 120%; top: -50px; }
       100% { left: -500px; top: 100%; }
     }
+
+    /* === Medium mode: exact diagonals with locked tilt === */
+    /* TL -> BR (right-lean, +45°) and reverse */
+    @keyframes mediumTLBR {
+      0%   { left: -120px; top: -120px; transform: translate(-50%, -50%) rotate(45deg); }
+      100% { left: 100%;   top: 100%;   transform: translate(-50%, -50%) rotate(45deg); }
+    }
+    @keyframes mediumTLBRReverse {
+      0%   { left: 100%;   top: 100%;   transform: translate(-50%, -50%) rotate(45deg); }
+      100% { left: -120px; top: -120px; transform: translate(-50%, -50%) rotate(45deg); }
+    }
+
+    /* TR -> BL (left-lean, -45°) and reverse */
+    @keyframes mediumTRBL {
+      0%   { left: 100%;  top: -120px; transform: translate(-50%, -50%) rotate(-45deg); }
+      100% { left: -120px; top: 100%;  transform: translate(-50%, -50%) rotate(-45deg); }
+    }
+    @keyframes mediumTRBLReverse {
+      0%   { left: -120px; top: 100%;  transform: translate(-50%, -50%) rotate(-45deg); }
+      100% { left: 100%;  top: -120px; transform: translate(-50%, -50%) rotate(-45deg); }
+    }
     @keyframes hardMoveMultipleReverse {
       0% { left: 120%; top: 100%; }
       100% { left: -500px; top: -500px; }
@@ -645,10 +688,66 @@
       if (currentTry >= tries) {
         document.getElementById('test').style.display = 'none';
         document.getElementById('gameOver').style.display = 'block';
+        setBackHomeVisible(true); // show on Game Over
         displayFinalScore(); // Ensure score metric is displayed correctly
         return;
       }
       // ...existing code...
+    }
+
+    // --- HARD mode geometry: acute‑V endpoints via rotated sprite extents ---
+    // Computes TL↔BR and TR↔BL endpoints through the center of #wave-container.
+    // Uses the sprite's current width/height and the locked rotation ±θ so it can
+    // truly reach the edges without stopping short or clipping.
+    function computeHardEndpoints(gammaDeg = 45, spriteW = 220, spriteH = 220) {
+      const wave = document.getElementById('wave-container');
+      const W = wave.clientWidth;
+      const H = wave.clientHeight;
+
+      const Cx = W / 2, Cy = H / 2;
+      const thetaDeg = 90 - gammaDeg / 2; // line angle from +x (e.g., 67.5° for gamma=45)
+      const theta = thetaDeg * Math.PI / 180;
+
+      // Direction unit vectors
+      const dx = Math.cos(theta), dy = Math.sin(theta);
+
+      // Half-extents of the *rotated* sprite's axis-aligned bounding box
+      // This keeps the whole image visible while allowing the center to go right
+      // up to the container edges.
+      const w2 = spriteW / 2, h2 = spriteH / 2;
+      const hxSprite = Math.abs(w2 * Math.cos(theta)) + Math.abs(h2 * Math.sin(theta));
+      const hySprite = Math.abs(w2 * Math.sin(theta)) + Math.abs(h2 * Math.cos(theta));
+
+      // Available half-extents for the sprite center
+      const hxAvail = Math.max(0, (W / 2) - hxSprite);
+      const hyAvail = Math.max(0, (H / 2) - hySprite);
+
+      // Parameter to rectangle boundary along the chosen direction
+      const denomX = Math.abs(dx) || 1e-6;
+      const denomY = Math.abs(dy) || 1e-6;
+      const tmax = Math.min(hxAvail / denomX, hyAvail / denomY);
+
+      // Endpoints for the two diagonals through the center
+      // Positive-slope (TL↔BR)
+      const A0 = { x: Cx - tmax * dx, y: Cy - tmax * dy }; // TL
+      const A1 = { x: Cx + tmax * dx, y: Cy + tmax * dy }; // BR
+
+      // Negative-slope (TR↔BL)
+      const B0 = { x: Cx - tmax * dx, y: Cy + tmax * dy }; // BL
+      const B1 = { x: Cx + tmax * dx, y: Cy - tmax * dy }; // TR
+
+      const L = 2 * tmax; // segment length
+      return { A0, A1, B0, B1, L, thetaDeg };
+    }
+    // Medium wants a single 45° lane through center.
+    function computeMediumEndpoints(spriteW = 220, spriteH = 220) {
+      return computeHardEndpoints(90, spriteW, spriteH); // θ=45°
+    }
+    // Generic endpoint calculator for any |θ| in degrees: θ ∈ (0,90)
+    // Converts to the gamma used above via gamma = 2 * (90 - θ)
+    function computeEndpointsForTheta(thetaAbsDeg, spriteW = 220, spriteH = 220) {
+      const gamma = 2 * (90 - Math.max(0, Math.min(89.9, thetaAbsDeg)));
+      return computeHardEndpoints(gamma, spriteW, spriteH);
     }
   </script>
   <!--
@@ -663,7 +762,7 @@
   <button onclick="toggleHowItWorks()" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; font-size: 24px; background-color: #FFD700; color: #000; border: none; border-radius: 50%; width: 50px; height: 50px; box-shadow: 0 0 12px #000; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">
     ?
   </button>
-  <button onclick="window.location.href='https://perceptual-app-beta-1.vercel.app'"
+  <button id="backHomeBtn" onclick="goHome()"
     style="
       position: fixed;
       top: 20px;
@@ -678,8 +777,9 @@
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 0 10px #000;
+      display: none;
     ">
-    ⬅ Back to Main Site
+    ⬅ Back to Home
   </button>
   <button id="signOutBtn" onclick="signOut()" style="
     position: fixed;
@@ -732,12 +832,14 @@
     function showRegister() {
       document.getElementById('authContainer').style.display = 'none';
       document.getElementById('registerPage').style.display = 'block';
+      setBackHomeVisible(false);
     }
 
     // Switches back to the login form view
     function showLogin() {
       document.getElementById('registerPage').style.display = 'none';
       document.getElementById('authContainer').style.display = 'block';
+      setBackHomeVisible(false);
     }
 
     // Submits registration info and creates a new user in Firestore
@@ -784,6 +886,14 @@
         <span id="difficultyLabel" style="font-size: 1.2em; font-weight: bold; color: #007BFF;">Medium</span>
       </div>
       <input type="range" id="difficultySlider" min="0" max="4" value="1" style="accent-color: #007BFF;" />
+    </div>
+    <div id="adaptiveControls" class="form-group" style="display:none;">
+      <label for="adaptiveMode" style="font-weight: bold;">Adaptive Mode:</label>
+      <select id="adaptiveMode" style="padding: 8px; border-radius: 8px;">
+        <option value="standard">Adaptive</option>
+        <option value="fast">Adaptive (Fast)</option>
+      </select>
+      <small style="color:#fff;opacity:0.9;">Fast = 1.35× speed; spacing unchanged.</small>
     </div>
     <div class="form-group">
       <label>Choose Your Animal:</label>
@@ -856,6 +966,9 @@
     <h2 style="color: white; font-size: 2.5em; text-shadow: 2px 2px 5px #000;">All Done!</h2>
     <p id="finalScore" style="color: #FFD700; font-size: 2em; font-weight: bold; text-shadow: 2px 2px 5px #000;">Score: 0 / 0</p>
     <button onclick="resetGameAndStart()" style="background-color: #28a745; font-size: 1.5em;">Restart</button>
+    <button onclick="goHome()" style="background-color: #6c757d; font-size: 1.2em; margin-top: 10px; color: white; padding: 10px 25px; border-radius: 10px; border: none; cursor: pointer;">
+      Back to Home
+    </button>
     <button onclick="showFeedbackForm()" style="background-color: #1E90FF; font-size: 1.2em; margin-top: 10px;">Submit Feedback</button>
     <button onclick="viewOverallResults()" style="background-color: orange; font-size: 1.2em; margin-top: 10px; color: white; padding: 10px 25px; border-radius: 10px; border: none; cursor: pointer;">
       Overall Results
@@ -892,9 +1005,32 @@
 
   <div id="chartContainer" style="display: none; text-align: center; margin-top: 30px; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); width: 100%; max-width: 100%;">
     <h2 style="color: black;">Trial Results</h2>
+    <div id="resultsSummary" style="color:#000; font-weight:600; margin-top:6px;">
+      <!-- filled at runtime -->
+    </div>
+    <div id="resultsControls" style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin:10px 0 0 0;">
+      <label style="color:#000; font-weight:bold;">Filter:</label>
+      <select id="filterType" style="padding:6px 10px; border-radius:8px;">
+        <option value="all">All Types</option>
+        <option value="none">No Distractors</option>
+        <option value="sound">Auditory</option>
+        <option value="visual">Visual</option>
+        <option value="both">Both</option>
+      </select>
+      <select id="filterCorrect" style="padding:6px 10px; border-radius:8px;">
+        <option value="all">All Outcomes</option>
+        <option value="correct">Correct</option>
+        <option value="incorrect">Incorrect</option>
+        <option value="miss">Missed</option>
+      </select>
+      <label style="color:#000; display:flex; align-items:center; gap:6px;">
+        <input id="toggleDetails" type="checkbox" /> Show details
+      </label>
+    </div>
     <canvas id="noDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
     <canvas id="auditoryDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
     <canvas id="visualDistractorChart" style="max-width: 600px; width: 100%; margin: 20px auto; display: block;"></canvas>
+    <div id="trialTimeline" style="margin-top: 10px;"></div>
   </div>
 
   <script>
@@ -916,6 +1052,8 @@
     let animalsFinished = 0;
     // Global interval handle for continuous animal spawning
     let spawnInterval = null;
+    // Guard to enforce ONE stream per trial
+    let streamActive = false;
     // Track how many animals are currently on‑screen
     let activeAnimals = 0;
     // Flag so we don't start multiple countdowns
@@ -940,6 +1078,56 @@
     let trialResults = []; // Array to track trial results
     // Step 1: Track total number of tries for this game session
     let totalTries = 0;   // total number of trials for this game session
+    // One speed for all difficulties; durations/paths change, speed does not.
+    const GLOBAL_BASE_SPEED_PX_PER_SEC = 400;
+    // --- Adaptive policy & levels (single source of truth) ---
+    const ADAPTIVE_EASY_ANGLE = 15; // choose 15° for Level 0 (diagonal feel)
+    const ADAPTIVE_ANGLES = [ADAPTIVE_EASY_ANGLE, 45, 67.5, 75];
+    const ADAPTIVE_POLICY = 'up_only'; // 'up_only' or 'up_down'
+    const ADAPTIVE_K = 4; // consecutive for promotion/demotion
+    const ADAPTIVE_MIN_TRIALS = 15; // Tmin
+    const ADAPTIVE_FAST_MULTIPLIER = 1.35; // speed multiplier for Fast mode
+
+    // Adaptive runtime state
+    let adaptiveState = {
+      level: 0,
+      streakUp: 0,
+      streakDown: 0,
+      trialsRun: 0,
+      speedMode: 'standard'
+    };
+
+    function resetAdaptiveState(mode) {
+      adaptiveState = { level: 0, streakUp: 0, streakDown: 0, trialsRun: 0, speedMode: mode || 'standard' };
+    }
+
+    function updateAdaptiveState(wasCorrect) {
+      adaptiveState.trialsRun++;
+      if (wasCorrect) {
+        adaptiveState.streakUp++;
+        adaptiveState.streakDown = 0;
+      } else {
+        adaptiveState.streakDown++;
+        adaptiveState.streakUp = 0;
+      }
+      if (ADAPTIVE_POLICY === 'up_only') {
+        if (adaptiveState.streakUp >= ADAPTIVE_K && adaptiveState.level < 3) {
+          adaptiveState.level++;
+          adaptiveState.streakUp = 0;
+          adaptiveState.streakDown = 0;
+        }
+      } else {
+        if (adaptiveState.streakUp >= ADAPTIVE_K && adaptiveState.level < 3) {
+          adaptiveState.level++;
+          adaptiveState.streakUp = 0;
+          adaptiveState.streakDown = 0;
+        } else if (adaptiveState.streakDown >= ADAPTIVE_K && adaptiveState.level > 0) {
+          adaptiveState.level--;
+          adaptiveState.streakUp = 0;
+          adaptiveState.streakDown = 0;
+        }
+      }
+    }
 
     // === GAME INITIALIZATION AND START ===
 
@@ -966,6 +1154,11 @@
     if (difficultySlider && difficultyLabel) {
       difficultySlider.addEventListener('input', () => {
         const level = difficultyLevelsMap[difficultySlider.value];
+        // Show custom controls only in Adaptive mode
+        const adaptiveControls = document.getElementById('adaptiveControls');
+        if (adaptiveControls) {
+          adaptiveControls.style.display = (level === 'adaptive') ? 'block' : 'none';
+        }
         // Format label: capitalize first letter, add space before uppercase
         difficultyLabel.textContent = level.charAt(0).toUpperCase() + level.slice(1).replace(/([A-Z])/g, ' $1');
 
@@ -1000,6 +1193,21 @@
       });
     }
 
+    // Adaptive controls value mirrors + initial visibility
+    (function initAdaptiveControls(){
+      const angle = document.getElementById('adaptiveAngle');
+      const speed = document.getElementById('adaptiveSpeed');
+      const angleVal = document.getElementById('adaptiveAngleValue');
+      const speedVal = document.getElementById('adaptiveSpeedValue');
+      if (angle && angleVal) angle.addEventListener('input', ()=> angleVal.textContent = angle.value);
+      if (speed && speedVal) speed.addEventListener('input', ()=> speedVal.textContent = speed.value);
+      const adaptiveControls = document.getElementById('adaptiveControls');
+      if (adaptiveControls && difficultySlider) {
+        const level0 = difficultyLevelsMap[difficultySlider.value];
+        adaptiveControls.style.display = (level0 === 'adaptive') ? 'block' : 'none';
+      }
+    })();
+
     // --- AUTHENTICATION LOGIC ---
     let loggedInUser = null;
 
@@ -1022,6 +1230,7 @@
             loggedInUser = username;
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('home').style.display = 'block';
+            setBackHomeVisible(false);
           });
         }
       });
@@ -1064,6 +1273,7 @@
               loginButton.textContent = "Login";
               // Show sign‑out button after login
               document.getElementById("signOutBtn").style.display = "block";
+              setBackHomeVisible(false);
               if (errorMessage) {
                 errorMessage.style.display = "none";
                 errorMessage.textContent = "";
@@ -1133,10 +1343,24 @@
         animal: selectedAnimal,
         playerName: playerNameInput
       };
+      // Adaptive mode setup
+      if (selectedDifficulty === 'adaptive') {
+        const modeEl = document.getElementById('adaptiveMode');
+        const mode = modeEl ? modeEl.value : 'standard';
+        selections.adaptiveSpeedMode = mode;
+        selections.adaptiveSpeedMultiplier = (mode === 'fast') ? ADAPTIVE_FAST_MULTIPLIER : 1.0;
+        // Reset adaptive state for this session
+        resetAdaptiveState(mode);
+      }
       selections.lightsOn = document.getElementById('lightsToggleBtn').classList.contains('active');
-      tries = selections.numTries;
+      // Trials: enforce Tmin for Adaptive
+      if (selectedDifficulty === 'adaptive') {
+        tries = Math.max(selections.numTries, ADAPTIVE_MIN_TRIALS);
+      } else {
+        tries = selections.numTries;
+      }
       // Store for final score display
-      totalTries = selections.numTries;
+      totalTries = tries;
       document.getElementById('home').style.display = 'none';
       document.getElementById('howItWorks').style.display = 'none'; // hide instructions
       document.getElementById('countdown').style.display = 'block';
@@ -1164,6 +1388,7 @@
           if (isQuitting) return;
           document.getElementById('countdown').style.display = 'none';
           document.getElementById('test').style.display = 'block';
+          setBackHomeVisible(true); // show only during gameplay
           runTask();
         }
       }, 1000); // Show each number for exactly 1 second
@@ -1206,14 +1431,20 @@
         clearInterval(spawnInterval);
         spawnInterval = null;
       }
+      // Drop the stream guard on user response
+      streamActive = false;
       // Reset animal trackers
       activeAnimals = 0;
       countdownStarted = false;
 
       // Record latency for this trial
       window.responseGiven = true;
-      const latency = (Date.now() - trialStartTime) / 1000;
-      if (trialResults.length > 0) trialResults[trialResults.length - 1].latency = latency;
+      const latencySec = (Date.now() - trialStartTime) / 1000;
+      if (trialResults.length > 0) {
+        const t = trialResults[trialResults.length - 1];
+        t.latency = latencySec;
+        t.latencyMs = Math.round(latencySec * 1000);
+      }
 
       const lastTrial = trialResults[trialResults.length - 1];
       let isCorrect = false;
@@ -1240,7 +1471,11 @@
         if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
       }
 
-      adjustDifficulty(); // Adjust difficulty dynamically
+      if (selections && selections.difficulty === 'adaptive') {
+        updateAdaptiveState(isCorrect);
+      } else {
+        adjustDifficulty(); // legacy adaptive for non-adaptive mode
+      }
       showFeedbackImage(isCorrect); // Show feedback image after response
     }
 
@@ -1258,10 +1493,18 @@
       const lastTrial = trialResults[trialResults.length - 1];
       lastTrial.correct = false; // Mark the last trial as incorrect
       // Record latency as null for missed responses
-      if (trialResults.length > 0) trialResults[trialResults.length - 1].latency = null;
+      if (trialResults.length > 0) {
+        const t = trialResults[trialResults.length - 1];
+        t.latency = null;
+        t.latencyMs = null;
+      }
       performanceTracker.push('wrong');
       if (performanceTracker.length > 2) performanceTracker.shift(); // keep last 2 only
-      adjustDifficulty(); // Adjust difficulty dynamically
+      if (selections && selections.difficulty === 'adaptive') {
+        updateAdaptiveState(false);
+      } else {
+        adjustDifficulty();
+      }
       showFeedbackImage(false); // Show incorrect feedback image
     }
 
@@ -1299,10 +1542,64 @@
       }
     }
 
+    // --- HARD mode geometry: acute‑V endpoints via rotated sprite extents ---
+    // Computes TL↔BR and TR↔BL endpoints through the center of #wave-container.
+    // Uses the sprite's current width/height and the locked rotation ±θ so it can
+    // truly reach the edges without stopping short or clipping.
+    function computeHardEndpoints(gammaDeg = 45, spriteW = 220, spriteH = 220) {
+      const wave = document.getElementById('wave-container');
+      const W = wave.clientWidth;
+      const H = wave.clientHeight;
+
+      const Cx = W / 2, Cy = H / 2;
+      const thetaDeg = 90 - gammaDeg / 2; // line angle from +x (e.g., 67.5° for gamma=45)
+      const theta = thetaDeg * Math.PI / 180;
+
+      // Direction unit vectors
+      const dx = Math.cos(theta), dy = Math.sin(theta);
+
+      // Half-extents of the *rotated* sprite's axis-aligned bounding box
+      // This keeps the whole image visible while allowing the center to go right
+      // up to the container edges.
+      const w2 = spriteW / 2, h2 = spriteH / 2;
+      const hxSprite = Math.abs(w2 * Math.cos(theta)) + Math.abs(h2 * Math.sin(theta));
+      const hySprite = Math.abs(w2 * Math.sin(theta)) + Math.abs(h2 * Math.cos(theta));
+
+      // Available half-extents for the sprite center
+      const hxAvail = Math.max(0, (W / 2) - hxSprite);
+      const hyAvail = Math.max(0, (H / 2) - hySprite);
+
+      // Parameter to rectangle boundary along the chosen direction
+      const denomX = Math.abs(dx) || 1e-6;
+      const denomY = Math.abs(dy) || 1e-6;
+      const tmax = Math.min(hxAvail / denomX, hyAvail / denomY);
+
+      // Endpoints for the two diagonals through the center
+      // Positive-slope (TL↔BR)
+      const A0 = { x: Cx - tmax * dx, y: Cy - tmax * dy }; // TL
+      const A1 = { x: Cx + tmax * dx, y: Cy + tmax * dy }; // BR
+
+      // Negative-slope (TR↔BL)
+      const B0 = { x: Cx - tmax * dx, y: Cy + tmax * dy }; // BL
+      const B1 = { x: Cx + tmax * dx, y: Cy - tmax * dy }; // TR
+
+      const L = 2 * tmax; // segment length
+      return { A0, A1, B0, B1, L, thetaDeg };
+    }
+    // Medium wants a single 45° lane through center.
+    function computeMediumEndpoints(spriteW = 220, spriteH = 220) {
+      return computeHardEndpoints(90, spriteW, spriteH); // θ=45°
+    }
     // Step 4: Use Adaptive Difficulty Inside runTask()
     // Runs a single task/trial: sets up animals, distractors, and handles user input
     function runTask() {
       if (isQuitting) return;
+      // Reset stream guard and kill any prior spawners from past trials
+      streamActive = false;
+      if (spawnInterval) {
+        clearInterval(spawnInterval);
+        spawnInterval = null;
+      }
       window.responseGiven = false;
       // Track trial start time for latency measurement
       trialStartTime = Date.now();
@@ -1326,6 +1623,7 @@
         }
         document.getElementById('test').style.display = 'none';
         document.getElementById('gameOver').style.display = 'block';
+        setBackHomeVisible(true); // show on Game Over
         displayFinalScore(); // Ensure score metric is displayed correctly
         displayResultsChart(); // Display results chart at the end
         
@@ -1411,45 +1709,90 @@
       const direction = Math.random() > 0.5 ? 'Forward' : 'Backward';
       let usedDifficulty;
       if (selections.difficulty === 'adaptive') {
-        usedDifficulty = currentDifficulty;
+        usedDifficulty = 'adaptive';
       } else {
         usedDifficulty = selections.difficulty;
       }
 
-      const animClass = {
-        easy: direction === 'Forward' ? 'easyMoveMultiple' : 'easyMoveMultipleReverse',
-        medium: direction === 'Forward' ? 'mediumMoveMultiple' : 'mediumMoveMultipleReverse',
-        hard: direction === 'Forward' ? 'hardMoveMultiple' : 'hardMoveMultipleReverse',
-        veryHard: direction === 'Forward' ? 'veryHardMoveMultiple' : 'veryHardMoveMultipleReverse'
-      }[usedDifficulty];
+      // Choose animation name; special-case Medium for exact diagonals with locked tilt
+      let animName = null;
+      let mediumLockedTiltDeg = null; // +45 for TL<->BR, -45 for TR<->BL
+      let goesRightForMedium = null;  // true => correctAnswer is 'Q', false => 'P'
+      let hardLockedTiltDeg = null;   // +θ or -θ for HARD acute-V
+      let hardStart = null, hardEnd = null; // endpoints for the chosen HARD direction
+      let goesRightForHard = null;    // true => 'Q', false => 'P'
+      let hardDir = null; // which of TL_BR, BR_TL, TR_BL, BL_TR
+      // Very Hard state
+      let goesRightForVeryHard = null;
+      let veryHardLockedTiltDeg = null; // ±75°
+      let veryHardDir = null;
 
-      // --- Tilt Angle Mapping by Difficulty ---
-      // Standard difficulty-to-angle mapping (degrees)
-      const difficultyAngles = {
-        easy: 0,
-        medium: 15,
-        hard: 30,
-        veryHard: 45
-      };
-      // For adaptive mode: track current adaptive level (0=easy, 1=medium, 2=hard, 3=veryhard)
-      let currentAdaptiveLevel = 1; // default to 'medium'
-      // Map usedDifficulty to adaptive level index if in adaptive mode
-      if (selections.difficulty === "adaptive") {
-        // Map currentDifficulty string to index
-        const adaptiveLevelMap = { easy: 0, medium: 1, hard: 2, veryHard: 3 };
-        currentAdaptiveLevel = adaptiveLevelMap[currentDifficulty] ?? 1;
-      }
-      // Adaptive angles array (degrees)
-      const adaptiveAngles = [0, 15, 30, 45];
-      // Determine the appropriate angle for this trial
-      let angle = 0;
-      if (selections.difficulty === "adaptive") {
-        angle = adaptiveAngles[currentAdaptiveLevel];
+      if (usedDifficulty === 'adaptive') {
+        // Adaptive: pick random diagonal each trial; angle from level table
+        const dirs = ['TL_BR', 'BR_TL', 'TR_BL', 'BL_TR'];
+        const pickDir = dirs[Math.floor(Math.random() * dirs.length)];
+        window._adaptiveDir = pickDir;
+        const thetaAbs = ADAPTIVE_ANGLES[adaptiveState.level];
+        animName = null; // use stream engine
+        // Determine horizontal drift for correctness mapping
+        var goesRightForAdaptive = (pickDir === 'TL_BR' || pickDir === 'BL_TR');
+        // Telemetry line for visibility
+        console.log(`[Adaptive] level=${adaptiveState.level} θ=${thetaAbs}° dir=${pickDir} expected=${goesRightForAdaptive ? 'Right (Q)' : 'Left (P)'} mode=${adaptiveState.speedMode}`);
+      } else if (usedDifficulty === 'medium') {
+        // Medium: continuous stream along one 45° diagonal through center
+        const dirs = ['TL_BR', 'BR_TL', 'TR_BL', 'BL_TR']; // four diagonals
+        const mediumDir = dirs[Math.floor(Math.random() * dirs.length)];
+        window._mediumDir = mediumDir;      // debug aid
+        animName = null;                    // no CSS keyframes for medium
+        mediumLockedTiltDeg = null;         // rotation handled in startMediumStream
+        // Horizontal movement: TL->BR and BL->TR move right; BR->TL and TR->BL move left
+        goesRightForMedium = (mediumDir === 'TL_BR' || mediumDir === 'BL_TR');
+        console.log(`[Medium] 45° lane dir=${mediumDir} | expected=${goesRightForMedium ? 'Right (Q)' : 'Left (P)'}`);
+      } else if (usedDifficulty === 'hard') {
+        // Choose one of four acute diagonals; endpoints will be computed per-sprite in spawn
+        const thetaDegHard = 90 - 45 / 2; // 67.5°
+        const dirs = ['TL_BR', 'BR_TL', 'TR_BL', 'BL_TR'];
+        const pick = dirs[Math.floor(Math.random() * dirs.length)];
+        hardDir = pick; // store for spawnAnimal
+        switch (pick) {
+          case 'TL_BR': hardLockedTiltDeg = +thetaDegHard; goesRightForHard = true;  break;
+          case 'BR_TL': hardLockedTiltDeg = +thetaDegHard; goesRightForHard = false; break;
+          case 'TR_BL': hardLockedTiltDeg = -thetaDegHard; goesRightForHard = false; break;
+          case 'BL_TR': hardLockedTiltDeg = -thetaDegHard; goesRightForHard = true;  break;
+        }
+      } else if (usedDifficulty === 'veryHard') {
+        // Choose diagonal; endpoints computed by generic stream engine
+        const thetaDegVH = 75; // absolute tilt
+        const dirs = ['TL_BR', 'BR_TL', 'TR_BL', 'BL_TR'];
+        const pick = dirs[Math.floor(Math.random() * dirs.length)];
+        veryHardDir = pick;
+        switch (pick) {
+          case 'TL_BR': veryHardLockedTiltDeg = +thetaDegVH; goesRightForVeryHard = true;  break;
+          case 'BR_TL': veryHardLockedTiltDeg = +thetaDegVH; goesRightForVeryHard = false; break;
+          case 'TR_BL': veryHardLockedTiltDeg = -thetaDegVH; goesRightForVeryHard = false; break;
+          case 'BL_TR': veryHardLockedTiltDeg = -thetaDegVH; goesRightForVeryHard = true;  break;
+        }
+        animName = null; // use stream engine, not CSS keyframes
       } else {
-        angle = difficultyAngles[usedDifficulty];
+        // easy uses CSS keyframes (unchanged)
+        const mapping = {
+          easy: direction === 'Forward' ? 'easyMoveMultiple' : 'easyMoveMultipleReverse'
+        };
+        animName = mapping[usedDifficulty];
       }
-      // Log the angle for visual confirmation
-      console.log("Tilt angle applied:", angle);
+
+      // --- Tilt mapping only used for non-adaptive CSS/keyframe paths ---
+      let angle = 0;
+      if (usedDifficulty !== 'adaptive') {
+        const difficultyAngles = { easy: 0, medium: 15, hard: 30, veryHard: 45 };
+        angle = difficultyAngles[usedDifficulty];
+        // Override tilt for Medium/Hard when applicable
+        if (usedDifficulty === 'medium' && mediumLockedTiltDeg !== null) angle = mediumLockedTiltDeg;
+        if (usedDifficulty === 'hard' && hardLockedTiltDeg !== null) angle = hardLockedTiltDeg;
+      }
+      if (usedDifficulty === 'veryHard' && veryHardLockedTiltDeg !== null) {
+        angle = veryHardLockedTiltDeg; // lock tilt to ±75° for VERY HARD
+      }
 
       // Use absolute paths based on your GitHub Pages URL
       const basePath = 'https://kaushikvada3.github.io/Perception_App_Kids_Version/Images';
@@ -1465,25 +1808,176 @@
       // Fixed spacing (ms between spawns) for all difficulties
       const spawnGap = 500;  // adjust to taste
 
+      // --- HARD: single-runner continuous stream (one sprite, no overlaps) ---
+      function startHardStream() {
+        if (window.responseGiven) return; // Safety: don't start if already answered
+        const waveContainer = document.getElementById('wave-container');
+        // create sprite
+        activeAnimals++;
+        const img = document.createElement('img');
+        img.src = animalImageMap[selectedAnimal];
+        img.className = 'moving-animal';
+        img.style.width = '220px';
+        img.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        img.style.zIndex = 5;
+        waveContainer.appendChild(img);
+
+        // measure actual layout size
+        const spriteW = img.clientWidth || 220;
+        const spriteH = img.clientHeight || 220;
+
+        // compute endpoints for ±67.5° (gamma=45°) using actual sprite size
+        const { A0, A1, B0, B1 } = computeHardEndpoints(45, spriteW, spriteH);
+        let startPt, endPt;
+        switch (hardDir) {
+          case 'TL_BR': startPt = A0; endPt = A1; break;
+          case 'BR_TL': startPt = A1; endPt = A0; break;
+          case 'TR_BL': startPt = B1; endPt = B0; break;
+          case 'BL_TR': startPt = B0; endPt = B1; break;
+          default:      startPt = A0; endPt = A1; break;
+        }
+
+        // --- Extend path for curtain effect (go past edges, then remove) ---
+        const dxH = endPt.x - startPt.x, dyH = endPt.y - startPt.y;
+        const segLenH = Math.hypot(dxH, dyH) || 1;
+        const uxH = dxH / segLenH, uyH = dyH / segLenH;
+        const overshootH = Math.max(spriteW, spriteH) * 1.0;
+        startPt = { x: startPt.x - uxH * overshootH, y: startPt.y - uyH * overshootH };
+        endPt   = { x: endPt.x   + uxH * overshootH, y: endPt.y   + uyH * overshootH };
+
+        // put at start
+        img.style.left = `${startPt.x}px`;
+        img.style.top  = `${startPt.y}px`;
+
+        const BASE_SPEED = 400; // px/s feel
+        const dist = Math.hypot(endPt.x - startPt.x, endPt.y - startPt.y);
+        const legMs = (dist / BASE_SPEED) * 1000;
+        const endDeadline = performance.now() + stimDuration; // run for full stimulus
+
+        let from = startPt, to = endPt;
+        let t0 = performance.now();
+        let raf = null;
+
+        function step(now) {
+          if (window.responseGiven) return cleanup();
+          let p = (now - t0) / legMs; if (p > 1) p = 1;
+          const x = from.x + (to.x - from.x) * p;
+          const y = from.y + (to.y - from.y) * p;
+          img.style.left = `${x}px`;
+          img.style.top  = `${y}px`;
+
+          if (p < 1) {
+            raf = requestAnimationFrame(step);
+          } else {
+            // reached an endpoint
+            if (now >= endDeadline) return cleanup();
+            // flip and continue immediately
+            const tmp = from; from = to; to = tmp;
+            t0 = now;
+            raf = requestAnimationFrame(step);
+          }
+        }
+
+        raf = requestAnimationFrame(step);
+
+        function cleanup() {
+          if (raf) cancelAnimationFrame(raf);
+          img.remove();
+          activeAnimals--;
+          if (activeAnimals === 0 && !window.responseGiven && !countdownStarted) {
+            countdownStarted = true;
+            startResponseCountdown();
+          }
+        }
+      }
+
       // Helper function to spawn one animal, uses fixed speed for animation duration
       function spawnAnimal() {
+        if (window.responseGiven) return; // Safety: don't spawn if already answered
         activeAnimals++; // one more animal on screen
         const img = document.createElement('img');
         img.src = animalImageMap[selectedAnimal];
         img.className = 'moving-animal';
-        img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
-
-        img.style.left = direction === 'Forward'
-          ? '-600px'
-          : '120%';
-
         img.style.width = '220px';
+        // HARD uses computed endpoints + JS animation (constant-speed ping-pong per spawn)
+        if (usedDifficulty === 'hard') {
+          // Append first so layout has real width/height
+          img.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+          img.style.left = `0px`; // temporary
+          img.style.top  = `0px`; // temporary
+          img.style.zIndex = 5;
+          waveContainer.appendChild(img);
+
+          // Read actual laid-out sprite size
+          const spriteW = img.clientWidth || 220;
+          const spriteH = img.clientHeight || 220;
+
+          // Compute exact endpoints for this sprite/angle and container
+          const { A0, A1, B0, B1 } = computeHardEndpoints(45, spriteW, spriteH);
+
+          // Map stored direction to endpoints
+          switch (hardDir) {
+            case 'TL_BR': hardStart = A0; hardEnd = A1; break;
+            case 'BR_TL': hardStart = A1; hardEnd = A0; break;
+            case 'TR_BL': hardStart = B1; hardEnd = B0; break;
+            case 'BL_TR': hardStart = B0; hardEnd = B1; break;
+          }
+
+          // Extend endpoints for curtain effect on each spawned runner
+          const dxS = hardEnd.x - hardStart.x, dyS = hardEnd.y - hardStart.y;
+          const segLenS = Math.hypot(dxS, dyS) || 1;
+          const uxS = dxS / segLenS, uyS = dyS / segLenS;
+          const overshootS = Math.max(spriteW, spriteH) * 1.0;
+          hardStart = { x: hardStart.x - uxS * overshootS, y: hardStart.y - uyS * overshootS };
+          hardEnd   = { x: hardEnd.x   + uxS * overshootS, y: hardEnd.y   + uyS * overshootS };
+
+          // Position at start
+          img.style.left = `${hardStart.x}px`;
+          img.style.top  = `${hardStart.y}px`;
+
+          // Animate at constant speed along the segment
+          const BASE_SPEED = 1600 / 4; // ≈400 px/s to match other difficulties
+          const dist = Math.hypot(hardEnd.x - hardStart.x, hardEnd.y - hardStart.y);
+          const durationMs = (dist / BASE_SPEED) * 1000;
+
+          const t0 = performance.now();
+          function step(now) {
+            if (window.responseGiven) return;
+            let p = (now - t0) / durationMs;
+            if (p >= 1) p = 1;
+            const x = hardStart.x + (hardEnd.x - hardStart.x) * p;
+            const y = hardStart.y + (hardEnd.y - hardStart.y) * p;
+            img.style.left = `${x}px`;
+            img.style.top  = `${y}px`;
+            if (p < 1) {
+              requestAnimationFrame(step);
+            } else {
+              activeAnimals--;
+              img.remove();
+              if (activeAnimals === 0 && !window.responseGiven && !countdownStarted) {
+                countdownStarted = true;
+                startResponseCountdown();
+              }
+            }
+          }
+          requestAnimationFrame(step);
+          return;
+        }
+        if (usedDifficulty !== 'medium') {
+          img.style.top = `${Math.floor(Math.random() * 200) + 50}px`;
+          img.style.left = direction === 'Forward' ? '-600px' : '120%';
+        }
         // Calculate speed so that at stimDuration = 4 sec, animal crosses 1600px at constant speed.
         const totalDistancePx = 1600;
         const defaultStimDurationSec = 4;
         const SPEED_PX_PER_SEC = totalDistancePx / defaultStimDurationSec;
-        const animationDuration = (totalDistancePx / SPEED_PX_PER_SEC) * 1000; // ms
-        img.style.animation = `${animClass} ${animationDuration}ms linear 0ms forwards`;
+        const baseDurationMs = (totalDistancePx / SPEED_PX_PER_SEC) * 1000; // ms
+        // 100% = baseline speed; 200% = 2x faster (shorter duration)
+        const speedMultiplier = (selections.difficulty === 'adaptive')
+          ? Math.max(0.1, (selections.adaptiveSpeedMultiplier || 1.0))
+          : 1.0;
+        const adjustedDurationMs = baseDurationMs / speedMultiplier;
+        img.style.animation = `${animName} ${adjustedDurationMs}ms linear 0ms forwards`;
         img.style.transform = `rotate(${angle}deg)`;
         img.style.zIndex = 5;
 
@@ -1499,8 +1993,247 @@
         });
       }
 
-      // Start spawning immediately, first animal gets full duration (now fixed speed)
-      spawnAnimal();
+      if (usedDifficulty === 'hard') {
+        // Unified stream engine at 67.5°
+        startStreamEngine(hardDir, 67.5);
+      } else if (usedDifficulty === 'medium') {
+        startStreamEngine(window._mediumDir, 45);
+      } else if (usedDifficulty === 'adaptive') {
+        const speedMult = selections.adaptiveSpeedMultiplier || 1.0;
+        startStreamEngine(window._adaptiveDir, ADAPTIVE_ANGLES[adaptiveState.level], speedMult);
+      } else if (usedDifficulty === 'veryHard') {
+        // Unified stream engine at 75°
+        startStreamEngine(veryHardDir, 75);
+      } else {
+        // non-Hard: existing multi-spawn behavior
+        // Start immediately
+        spawnAnimal();
+        // Then continue at intervals
+        const taskStart = Date.now();
+        spawnInterval = setInterval(() => {
+          const elapsed = Date.now() - taskStart;
+          const remaining = stimDuration - elapsed;
+          if (window.responseGiven || remaining <= 0) {
+            clearInterval(spawnInterval);
+            spawnInterval = null;
+            return;
+          }
+          spawnAnimal();
+        }, spawnGap);
+      }
+
+      // --- Generic Stream Engine: continuous train for any |θ| ---
+      // dir: 'TL_BR' | 'BR_TL' | 'TR_BL' | 'BL_TR'
+      // thetaAbsDeg: 45, 67.5, 75 based on difficulty
+      function startStreamEngine(dir, thetaAbsDeg, speedMult = 1.0) {
+        const waveContainer = document.getElementById('wave-container');
+        const SPEED = GLOBAL_BASE_SPEED_PX_PER_SEC * Math.max(0.1, speedMult);     // px/s (global constant * multiplier)
+        const SPACING_PX = 180;                         // distance between animals along the lane
+        const spawnGapMs = (SPACING_PX / SPEED) * 1000; // time between spawns to keep spacing constant
+
+        // Enforce one stream per trial; ignore accidental double starts
+        if (streamActive) return;
+        streamActive = true;
+        if (spawnInterval) {
+          clearInterval(spawnInterval);
+          spawnInterval = null;
+        }
+
+        const stopAt = performance.now() + selections.stimDuration * 1000;
+        // let spawnTimer = null; // removed; use global spawnInterval
+
+        // Probe + (optional) downscale so there is guaranteed travel length
+        function computeLaneFor(dir) {
+          // hidden probe to measure true dimensions
+          const probe = document.createElement('img');
+          probe.src = (function () {
+            const base = 'https://kaushikvada3.github.io/Perception_App_Kids_Version/Images';
+            const map = {
+              turtle: `${base}/Turtle/turtle.jpeg`,
+              cat: `${base}/Cat/cat.jpeg`,
+              elephant: `${base}/Owl/owl_on_branch.jpeg`,
+              monkey: `${base}/Monkey/monkey_before_swing.jpeg`
+            };
+            return map[selectedAnimal];
+          })();
+          probe.className = 'moving-animal';
+          probe.style.width = '220px';
+          probe.style.visibility = 'hidden';
+          probe.style.left = '0px';
+          probe.style.top  = '0px';
+          waveContainer.appendChild(probe);
+
+          let sw = probe.clientWidth  || 220;
+          let sh = probe.clientHeight || 220;
+
+          // Compute endpoints through center for thetaAbsDeg
+          let { A0, A1, B0, B1, L } = computeEndpointsForTheta(thetaAbsDeg, sw, sh);
+
+          // Ensure there is enough travel length; if not, scale down and recompute
+          const MIN_VISIBLE_LEN = Math.max(120, 2 * SPACING_PX);
+          if (L < MIN_VISIBLE_LEN) {
+            const wave = document.getElementById('wave-container');
+            const W = wave.clientWidth, H = wave.clientHeight;
+            // Conservative bounds for rotated AABB at angle thetaAbsDeg
+            const rad = (thetaAbsDeg * Math.PI) / 180;
+            const hxSprite = Math.abs((sw/2) * Math.cos(rad)) + Math.abs((sh/2) * Math.sin(rad));
+            const hySprite = Math.abs((sw/2) * Math.sin(rad)) + Math.abs((sh/2) * Math.cos(rad));
+            const hxAvail = Math.max(20, (W / 2) - hxSprite);
+            const hyAvail = Math.max(20, (H / 2) - hySprite);
+            const scale = Math.max(0.2, Math.min(hxAvail / Math.max(1,hxSprite), hyAvail / Math.max(1,hySprite)));
+            sw = Math.max(80, Math.floor(sw * scale));
+            sh = Math.max(80, Math.floor(sh * scale));
+            probe.style.width = `${sw}px`;
+            ({ A0, A1, B0, B1, L } = computeEndpointsForTheta(thetaAbsDeg, sw, sh));
+          }
+          probe.remove();
+
+          let startPt, endPt, tilt;
+          switch (dir) {
+            case 'TL_BR': startPt = A0; endPt = A1; tilt = +thetaAbsDeg; break;
+            case 'BR_TL': startPt = A1; endPt = A0; tilt = +thetaAbsDeg; break;
+            case 'TR_BL': startPt = B1; endPt = B0; tilt = -thetaAbsDeg; break;
+            case 'BL_TR': startPt = B0; endPt = B1; tilt = -thetaAbsDeg; break;
+            default:      startPt = A0; endPt = A1; tilt = +thetaAbsDeg; break;
+          }
+          // --- Extend lane so animals pass behind the edge (curtain effect) ---
+          const dx = endPt.x - startPt.x, dy = endPt.y - startPt.y;
+          const segLen = Math.hypot(dx, dy) || 1;
+          const ux = dx / segLen, uy = dy / segLen;
+          // Overshoot ~ one sprite size so the whole image leaves the viewport before removal
+          const overshootPx = Math.max(sw, sh) * 1.0;
+
+          // Shift start back and end forward by overshoot along the lane direction
+          const startExtended = { x: startPt.x - ux * overshootPx, y: startPt.y - uy * overshootPx };
+          const endExtended   = { x: endPt.x   + ux * overshootPx, y: endPt.y   + uy * overshootPx };
+
+          return { startPt: startExtended, endPt: endExtended, tilt, spriteW: sw, spriteH: sh, overshootPx, visibleLen: segLen };
+        }
+
+        const lane = computeLaneFor(dir);
+        // Telemetry for sanity while testing
+        console.log(`[Stream] θ=${thetaAbsDeg}°, dir=${dir}, speed=${SPEED}px/s (×${speedMult}), spacing=${SPACING_PX}px, laneVisibleLen=${Math.round(lane.visibleLen)}px`);
+        // Save lane info into the last trial record if present
+        try {
+          if (Array.isArray(trialResults) && trialResults.length > 0) {
+            const t = trialResults[trialResults.length - 1];
+            t.laneLengthPx = Math.round(lane.visibleLen);
+            t.spriteW = lane.spriteW;
+            t.spriteH = lane.spriteH;
+            t.spacingPx = SPACING_PX;
+            if (typeof speedMult === 'number') t.speedMultiplier = speedMult;
+          }
+        } catch (_) {}
+        if (lane.visibleLen < 2 * SPACING_PX) {
+          console.warn(`[Stream] Warning: laneLength < 2*spacing; stream may look sparse.`);
+        }
+
+        // Spawn a single animal with an initial progress offset (0..1) along the lane
+        function spawnOneWithProgress(p0 /* 0..1 */) {
+          if (window.responseGiven || performance.now() >= stopAt || !streamActive) return;
+          activeAnimals++;
+          const img = document.createElement('img');
+          img.src = (function () {
+            const base = 'https://kaushikvada3.github.io/Perception_App_Kids_Version/Images';
+            const map = {
+              turtle: `${base}/Turtle/turtle.jpeg`,
+              cat: `${base}/Cat/cat.jpeg`,
+              elephant: `${base}/Owl/owl_on_branch.jpeg`,
+              monkey: `${base}/Monkey/monkey_before_swing.jpeg`
+            };
+            return map[selectedAnimal];
+          })();
+          img.className = 'moving-animal';
+          img.style.width = `${lane.spriteW}px`;
+          img.style.zIndex = 5;
+          img.style.transform = `translate(-50%, -50%) rotate(${lane.tilt}deg)`;
+          // place at progress p0
+          const dist = Math.hypot(lane.endPt.x - lane.startPt.x, lane.endPt.y - lane.startPt.y);
+          const startX = lane.startPt.x + (lane.endPt.x - lane.startPt.x) * p0;
+          const startY = lane.startPt.y + (lane.endPt.y - lane.startPt.y) * p0;
+          img.style.left = `${startX}px`;
+          img.style.top  = `${startY}px`;
+          waveContainer.appendChild(img);
+
+          const durationMs = ((1 - p0) * dist / SPEED) * 1000; // remaining time to finish
+          const t0 = performance.now();
+
+          function step(now) {
+            if (window.responseGiven) return cleanup();
+            let p = (now - t0) / durationMs; if (p > 1) p = 1;
+            const x = startX + (lane.endPt.x - startX) * p;
+            const y = startY + (lane.endPt.y - startY) * p;
+            img.style.left = `${x}px`;
+            img.style.top  = `${y}px`;
+
+            if (p < 1) {
+              requestAnimationFrame(step);
+            } else {
+              cleanup();
+            }
+          }
+          function cleanup() {
+            img.remove();
+            activeAnimals--;
+            if (performance.now() >= stopAt && activeAnimals === 0 && !window.responseGiven && !countdownStarted) {
+              countdownStarted = true;
+              // Drop guard when the stream naturally ends
+              streamActive = false;
+              startResponseCountdown();
+            }
+          }
+          requestAnimationFrame(step);
+        }
+
+        // --- Visible stream seeding ---
+        // Determine how many animals fit along the lane at the chosen spacing,
+        // then pre-seed them so a stream is visible immediately.
+        (function seedStream() {
+          const dist = Math.hypot(lane.endPt.x - lane.startPt.x, lane.endPt.y - lane.startPt.y);
+          const stepP = SPACING_PX / dist;
+
+          // was: const headSkipP = Math.min(0.3, lane.overshootPx / dist + stepP * 0.5);
+          const headSkipP = Math.min(0.3, lane.overshootPx / dist);
+          const tailSkipP = Math.min(0.3, lane.overshootPx / dist);
+
+          const startP = headSkipP;
+          const endLimit = 1 - tailSkipP;
+
+          const nSeeds = Math.min(10, Math.floor((endLimit - startP) / stepP) + 1);
+          for (let i = 0; i < nSeeds; i++) {
+            const p0 = startP + i * stepP;
+            if (p0 < endLimit) spawnOneWithProgress(p0);
+          }
+          console.log(`[Stream] seeded=${nSeeds}, headSkipP=${headSkipP.toFixed(3)}, tailSkipP=${tailSkipP.toFixed(3)}`);
+        })();
+
+        // Spawn at p0=0 immediately so there’s no head gap
+        spawnOneWithProgress(0);
+
+        // --- Sustained stream: spawn a new animal every spawnGapMs ---
+        spawnInterval = setInterval(() => {
+          if (!streamActive || window.responseGiven || performance.now() >= stopAt) {
+            clearInterval(spawnInterval);
+            spawnInterval = null;
+            streamActive = false;
+            return;
+          }
+          spawnOneWithProgress(0);
+        }, spawnGapMs);
+      }
+
+      // --- MEDIUM: continuous stream along one 45° diagonal (TL↔BR or TR↔BL), constant speed & spacing ---
+      // Backwards-compatible wrapper using the generic engine
+      function startMediumStream(dir /* 'TL_BR' | 'BR_TL' | 'TR_BL' | 'BL_TR' */) {
+        return startStreamEngine(dir, 45);
+      }
+      // Thin wrappers for consistency
+      function startHardStreamUnified(dir /* 'TL_BR' | 'BR_TL' | 'TR_BL' | 'BL_TR' */) {
+        return startStreamEngine(dir, 67.5);
+      }
+      function startVeryHardStream(dir /* 'TL_BR' | 'BR_TL' | 'TR_BL' | 'BL_TR' */) {
+        return startStreamEngine(dir, 75);
+      }
 
       // --- Visual Distractor: Four lights per corner with color flashes ---
       const lightsEnabled = document.getElementById('lightsToggleBtn').classList.contains('active');
@@ -1622,28 +2355,41 @@
             ? 'visual'
             : 'none';
 
-      // Keep spawning at regular intervals until stimDuration expires or user responds
-      const taskStart = Date.now();
-      spawnInterval = setInterval(() => {
-        const elapsed = Date.now() - taskStart;
-        const remaining = stimDuration - elapsed;
-
-        if (window.responseGiven || remaining <= 0) {
-          clearInterval(spawnInterval);
-          spawnInterval = null;
-          return;
-        }
-
-        // Spawn an animal at fixed speed
-        spawnAnimal();
-      }, spawnGap);
 
       console.log(`Trial ${currentTry + 1}: Difficulty = ${usedDifficulty}`);
-      window.correctAnswer = direction === 'Forward' ? 'Q' : 'P';
+      // Compute the correct answer mapping (Right = 'Q', Left = 'P')
+      if (usedDifficulty === 'medium' && goesRightForMedium !== null) {
+        window.correctAnswer = goesRightForMedium ? 'Q' : 'P';
+      } else if (usedDifficulty === 'hard' && goesRightForHard !== null) {
+        window.correctAnswer = goesRightForHard ? 'Q' : 'P';
+      } else if (usedDifficulty === 'adaptive') {
+        window.correctAnswer = (typeof goesRightForAdaptive !== 'undefined' && goesRightForAdaptive) ? 'Q' : 'P';
+      } else if (usedDifficulty === 'veryHard' && goesRightForVeryHard !== null) {
+        window.correctAnswer = goesRightForVeryHard ? 'Q' : 'P';
+      } else {
+        window.correctAnswer = direction === 'Forward' ? 'Q' : 'P';
+      }
+      console.log('Correct answer set to:', window.correctAnswer, '| usedDifficulty =', usedDifficulty, '| animName =', animName);
       currentTry++;
 
       // Log distractor usage for this trial
-      trialResults.push({ type: distractorType, correct: false });
+      // Append trial metadata for logging and analytics
+      trialResults.push({
+        type: distractorType,
+        correct: false,
+        level: (selections.difficulty === 'adaptive') ? adaptiveState.level : null,
+        angleDeg: (selections.difficulty === 'adaptive') ? ADAPTIVE_ANGLES[adaptiveState.level] : angle,
+        corner: (usedDifficulty === 'adaptive') ? window._adaptiveDir : (usedDifficulty === 'medium' ? window._mediumDir : (usedDifficulty === 'hard' ? hardDir : (usedDifficulty === 'veryHard' ? veryHardDir : direction))),
+        goesRight: (usedDifficulty === 'adaptive') ? !!goesRightForAdaptive : (usedDifficulty === 'medium') ? !!goesRightForMedium : (usedDifficulty === 'hard') ? !!goesRightForHard : (usedDifficulty === 'veryHard') ? !!goesRightForVeryHard : (direction === 'Forward'),
+        latency: null,
+        streakUp: adaptiveState.streakUp,
+        streakDown: adaptiveState.streakDown,
+        speedMultiplier: (selections.difficulty === 'adaptive') ? (selections.adaptiveSpeedMultiplier || 1.0) : 1.0,
+        spacingPx: 180,
+        laneLengthPx: null,
+        spriteW: null,
+        spriteH: null
+      });
 
       // No timeout-based countdown trigger needed; countdown starts after last animal's animationend.
       document.getElementById('responseCountdown').textContent = '';
@@ -1730,7 +2476,7 @@
       const correctGuessRight    = window.correctRight   || 0;
       const inCorrectGuessRight  = window.incorrectRight || 0;
       const correctGuessLeft     = window.correctLeft    || 0;
-      const inCorrectGuessLeft   = window.incorrectLeft  || 0;
+      const inCorrectGuessLeft   = window.incorrectLeft || 0;
       const missedGuess          = (window.noResponseRight || 0) + (window.noResponseLeft || 0);
 
       // Compute FracHit and FracCR per new formula
@@ -1815,6 +2561,12 @@
       const chartContainer = document.getElementById('chartContainer');
       document.getElementById('gameOver').appendChild(chartContainer); // Append chart to game over section
       chartContainer.style.display = 'block'; // Ensure the chart container is visible
+      // Summary banner
+      const total = trialResults.length;
+      const correct = trialResults.filter(t => t.correct).length;
+      const acc = total ? Math.round((correct / total) * 100) : 0;
+      const sumEl = document.getElementById('resultsSummary');
+      if (sumEl) sumEl.textContent = `Correct: ${correct}/${total} • Accuracy: ${acc}%`;
 
       // Group trial results by distractor type and in chunks of 5
       const groupedResults = { none: [], sound: [], visual: [] };
@@ -1896,6 +2648,14 @@
       if (hasVisual) {
         renderChart('visualDistractorChart', 'Visual Distractors', visualDistractorData, 'Attention Threshold (2)');
       }
+
+      // Build interactive trial timeline below charts
+      renderTrialTimeline();
+      setupResultsFilters();
+      // Scroll into view for visibility
+      setTimeout(() => {
+        try { document.getElementById('chartContainer').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+      }, 150);
     }
 
     // Renders a single chart for a given distractor type (correct/incorrect per group)
@@ -1971,12 +2731,14 @@
         },
         options: {
           responsive: true,
+          animation: { duration: 700, easing: 'easeOutQuart' },
           plugins: {
             title: {
               display: true,
               text: `${title} (${selections.difficulty === 'adaptive' ? 'Increasing Difficulty' : selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1) + ' difficulty'})`,
               font: { size: 18 },
             },
+            legend: { labels: { boxWidth: 16 } },
             annotation: {
               annotations: {
                 threshold: {
@@ -2020,6 +2782,83 @@
       canvasEl.parentNode.insertBefore(arrow, interpP.nextSibling);
     }
 
+    // --- Interactive Trial Timeline ---
+    function renderTrialTimeline(filtered = null) {
+      const timeline = document.getElementById('trialTimeline');
+      if (!timeline) return;
+      const rows = filtered || trialResults;
+      if (!rows || rows.length === 0) {
+        timeline.innerHTML = '<p style="color:#000;opacity:0.8;">No trials to display.</p>';
+        return;
+      }
+      const html = ['<div class="timeline-grid">'];
+      rows.forEach((t, i) => {
+        const idx = i + 1;
+        const correct = !!t.correct;
+        const missed = t.latency == null && !correct;
+        const cls = missed ? 'miss' : (correct ? 'correct' : 'incorrect');
+        const type = (t.type || 'none');
+        const typeCls = `type-${type}`;
+        const goesRight = !!t.goesRight;
+        const corner = t.corner || '';
+        const angle = (typeof t.angleDeg === 'number') ? `${t.angleDeg}°` : '—';
+        const latency = (t.latencyMs != null) ? `${t.latencyMs} ms` : 'miss';
+        const speedMult = (t.speedMultiplier && t.speedMultiplier !== 1) ? `×${t.speedMultiplier}` : '×1.0';
+        // Minimal card by default; advanced details move inside .details
+        html.push(`
+          <div class="result-card ${cls}" data-index="${idx}">
+            <h4>Trial ${idx}</h4>
+            <div class="meta">
+              <span class="badge ${typeCls}">${type}</span>
+              <span>${correct ? 'Correct' : (missed ? 'Missed' : 'Incorrect')}</span>
+              <span>• RT: ${latency}</span>
+            </div>
+            <div class="details">
+              <div>Level: ${t.level ?? '—'} • Angle: ${angle}</div>
+              <div>Corner: ${corner} • Drift: ${goesRight ? 'Right' : 'Left'}</div>
+              <div>Speed: ${speedMult} • Spacing: ${t.spacingPx ?? 180}px</div>
+              <div>Lane Length: ${t.laneLengthPx ?? '—'} px • Sprite: ${t.spriteW ?? '—'}×${t.spriteH ?? '—'}</div>
+              <div>Streak Up: ${t.streakUp ?? 0} • Streak Down: ${t.streakDown ?? 0}</div>
+            </div>
+          </div>
+        `);
+      });
+      html.push('</div>');
+      timeline.innerHTML = html.join('');
+      // Toggle card details on click
+      timeline.querySelectorAll('.result-card').forEach(card => {
+        card.addEventListener('click', () => card.classList.toggle('open'));
+      });
+    }
+
+    function setupResultsFilters() {
+      const typeSel = document.getElementById('filterType');
+      const corrSel = document.getElementById('filterCorrect');
+      const toggleDetails = document.getElementById('toggleDetails');
+      if (!(typeSel && corrSel)) return;
+      const apply = () => {
+        const tval = typeSel.value; const cval = corrSel.value;
+        const filtered = trialResults.filter(tr => {
+          const typeOk = (tval === 'all') || (tr.type === tval) || (tval === 'none' && (!tr.type || tr.type === 'none'));
+          const miss = tr.latency == null && !tr.correct;
+          const corrOk = (cval === 'all') || (cval === 'correct' && tr.correct) || (cval === 'incorrect' && (!tr.correct && !miss)) || (cval === 'miss' && miss);
+          return typeOk && corrOk;
+        });
+        renderTrialTimeline(filtered);
+        // Apply details visibility preference
+        if (toggleDetails && toggleDetails.checked) {
+          document.querySelectorAll('#trialTimeline .result-card').forEach(c => c.classList.add('open'));
+        }
+      };
+      typeSel.onchange = apply; corrSel.onchange = apply;
+      if (toggleDetails) {
+        toggleDetails.onchange = () => {
+          const opened = toggleDetails.checked;
+          document.querySelectorAll('#trialTimeline .result-card').forEach(c => c.classList.toggle('open', opened));
+        };
+      }
+    }
+
     // Toggles sound distractor on/off in settings
     function toggleSound() {
       const btn = document.getElementById('soundToggleBtn');
@@ -2037,6 +2876,7 @@
     function showFeedbackForm() {
       document.getElementById('gameOver').style.display = 'none';
       document.getElementById('feedbackForm').style.display = 'block';
+      setBackHomeVisible(false); // hide during feedback form
     }
 
     // Submits user feedback (placeholder)
@@ -2074,6 +2914,7 @@
       document.getElementById('home').style.display = 'block';
       // Optionally reset game state (but do not sign out user or reload)
       resetGameState();
+      setBackHomeVisible(false);
       // Ensure sign out button remains visible if user is logged in
       document.getElementById("signOutBtn").style.display = "block";
     }
@@ -2115,6 +2956,25 @@
       document.getElementById('home').style.display = 'block';
       // Ensure sign out button remains visible
       document.getElementById("signOutBtn").style.display = "block";
+      setBackHomeVisible(false);
+    }
+
+    // Navigates back to the Kids landing page (home) from anywhere
+    function goHome() {
+      const hideIds = ['test', 'countdown', 'gameOver', 'overallResultsPage', 'feedbackForm', 'howItWorks'];
+      hideIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      // Show home
+      const home = document.getElementById('home');
+      if (home) home.style.display = 'block';
+      // Reset game state for a fresh start
+      resetGameState();
+      setBackHomeVisible(false);
+      // Keep sign out visible if logged in
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn && loggedInUser) signOutBtn.style.display = 'block';
     }
 
     // Signs out the current user and returns to the login screen
@@ -2131,8 +2991,15 @@
       document.getElementById('authContainer').style.display = 'block';
       // Reset any other relevant data here
       resetGameState();
+      setBackHomeVisible(false);
     }
   window.quitGame = quitGame;
+
+    // Utility: control top-right Back to Home visibility
+    function setBackHomeVisible(visible) {
+      const btn = document.getElementById('backHomeBtn');
+      if (btn) btn.style.display = visible ? 'inline-block' : 'none';
+    }
 
     // === UTILITY: EVENT LISTENERS AND DOM HOOKS ===
 
@@ -2161,10 +3028,7 @@
       // Add goBackButton event for overallResultsPage
       const goBackBtn = document.getElementById("goBackButton");
       if (goBackBtn) {
-        goBackBtn.addEventListener("click", () => {
-          document.getElementById("overallResultsPage").style.display = "none";
-          document.getElementById("home").style.display = "block";
-        });
+        goBackBtn.addEventListener("click", goHome);
       }
     });
     // === RESULTS VISUALIZATION: OVERALL SESSION HISTORY ===
@@ -2173,6 +3037,7 @@
     function viewOverallResults() {
       document.getElementById("gameOver").style.display = "none";
       document.getElementById("overallResultsPage").style.display = "block";
+      setBackHomeVisible(false); // hide on overall results
       loadOverallResults();
     }
 
@@ -2180,6 +3045,7 @@
     function returnToEndScreen() {
       document.getElementById("overallResultsPage").style.display = "none";
       document.getElementById("gameOver").style.display = "block";
+      setBackHomeVisible(true); // show again on Game Over
     }
 
     // Loads and renders the overall session history from Firestore for the user
@@ -2463,7 +3329,7 @@
       </ul>
 
       <h3>🔹 3. What Controls Difficulty</h3>
-      <p>Difficulty dynamically updates based on how many responses were correct or incorrect in a row (2 correct increases difficulty, 2 wrong decreases it).</p>
+      <p>Adaptive mode (Up-only): starts at Level 0, promotes after 4 consecutive correct answers, never demotes, and runs for at least 15 trials. Optional “Adaptive (Fast)” runs the same logic at 1.35× speed.</p>
 
       <h3>🔹 4. Key Mechanics</h3>
       <ul>
@@ -2489,25 +3355,25 @@
     <h3>🔹 1. Difficulty Levels</h3>
     <p>Each difficulty level controls how tilted the animal appears:</p>
     <ul>
-      <li><strong>Easy:</strong> -45° (Very obvious direction)</li>
-      <li><strong>Medium:</strong> -22.5° (Moderate tilt)</li>
-      <li><strong>Difficult:</strong> -9.5° (Slight tilt)</li>
-      <li><strong>Adaptive:</strong> Adjusts dynamically as the player performs better or worse</li>
+      <li><strong>Easy:</li>
+      <li><strong>Medium:</li>
+      <li><strong>Difficult:</li>
+      <li><strong>Adaptive:</li>
     </ul>
     <h3>🔹 2. How Animals Move</h3>
     <p>Animals move horizontally across the screen, but their container is rotated, creating a diagonal movement illusion.</p>
     <ul>
-      <li><strong>Direction = Q:</strong> Left</li>
-      <li><strong>Direction = P:</strong> Right</li>
+      <li><strong>Direction = Q:</li>
+      <li><strong>Direction = P:</li>
     </ul>
     <h3>🔹 3. What Controls Difficulty</h3>
-    <p>Difficulty dynamically updates based on how many responses were correct or incorrect in a row (2 correct increases difficulty, 2 wrong decreases it).</p>
+    <p>Adaptive mode (Up-only): starts at Level 0, promotes after 4 consecutive correct answers, never demotes, and runs for at least 15 trials. Optional “Adaptive (Fast)” runs the same logic at 1.35× speed.</p>
     <h3>🔹 4. Key Mechanics</h3>
     <ul>
-      <li><strong>ang:</strong> Rotation of the animal container</li>
-      <li><strong>x:</strong> Array of positions for the animal</li>
-      <li><strong>barWidth:</strong> Width of the animal image</li>
-      <li><strong>direction:</strong> 1 for left, -1 for right</li>
+      <li><strong>ang:</li>
+      <li><strong>x:</li>
+      <li><strong>barWidth:</li>
+      <li><strong>direction:</li>
     </ul>
     <h3>🔹 5. What You Experience</h3>
     <ol>
@@ -2528,3 +3394,4 @@
     }
   </script>
 </body>
+</html>
