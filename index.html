@@ -1080,6 +1080,29 @@
     let totalTries = 0;   // total number of trials for this game session
     // One speed for all difficulties; durations/paths change, speed does not.
     const GLOBAL_BASE_SPEED_PX_PER_SEC = 400;
+    // Difficulty-based speed multipliers (speed is independent of stimulus duration)
+    const DIFFICULTY_SPEED_MULTIPLIER = {
+      easy: 0.75,
+      medium: 1.0,
+      hard: 1.6,       // shown as "Difficult"
+      veryHard: 2.2,   // shown as "Very Difficult"
+      adaptive: 1.0
+    };
+
+    function getDifficultySpeedMultiplier(level) {
+      return DIFFICULTY_SPEED_MULTIPLIER[level] ?? 1.0;
+    }
+
+    // Map internal difficulty keys to human-friendly labels
+    function displayDifficultyName(key) {
+      switch (key) {
+        case 'hard': return 'Difficult';
+        case 'veryHard': return 'Very Difficult';
+        default:
+          if (!key) return '';
+          return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+      }
+    }
     // --- Adaptive policy & levels (single source of truth) ---
     const ADAPTIVE_EASY_ANGLE = 15; // choose 15° for Level 0 (diagonal feel)
     const ADAPTIVE_ANGLES = [ADAPTIVE_EASY_ANGLE, 45, 67.5, 75];
@@ -1159,8 +1182,8 @@
         if (adaptiveControls) {
           adaptiveControls.style.display = (level === 'adaptive') ? 'block' : 'none';
         }
-        // Format label: capitalize first letter, add space before uppercase
-        difficultyLabel.textContent = level.charAt(0).toUpperCase() + level.slice(1).replace(/([A-Z])/g, ' $1');
+        // Format label using display mapping (Hard -> Difficult)
+        difficultyLabel.textContent = displayDifficultyName(level);
 
         let color = '#007BFF'; // Default: easy (blue)
         switch (level) {
@@ -1542,6 +1565,44 @@
       }
     }
 
+    // Force-stop the stimulus exactly at the configured duration, regardless of difficulty
+    function endStimulusNow() {
+      if (isQuitting || window.responseGiven) return;
+      console.log('[Stimulus] Hard stop at configured duration');
+      // Stop spawning
+      if (spawnInterval) {
+        clearInterval(spawnInterval);
+        spawnInterval = null;
+      }
+      streamActive = false;
+      // Remove all moving animals immediately
+      const wave = document.getElementById('wave-container');
+      if (wave) {
+        wave.querySelectorAll('.moving-animal').forEach(el => el.remove());
+      }
+      activeAnimals = 0;
+      // Stop any sound/visual distractors
+      if (window.soundStopTimeout) {
+        clearTimeout(window.soundStopTimeout);
+        window.soundStopTimeout = null;
+      }
+      try {
+        beepAudio.pause();
+        beepAudio.currentTime = 0;
+        beepAudio.loop = false;
+      } catch (_) {}
+      if (backgroundCycleInterval) {
+        clearInterval(backgroundCycleInterval);
+        backgroundCycleInterval = null;
+        document.body.style.backgroundImage = "url('Images/Background.jpeg')";
+      }
+      // Start the response countdown (single-fire)
+      if (!countdownStarted) {
+        countdownStarted = true;
+        startResponseCountdown();
+      }
+    }
+
     // --- HARD mode geometry: acute‑V endpoints via rotated sprite extents ---
     // Computes TL↔BR and TR↔BL endpoints through the center of #wave-container.
     // Uses the sprite's current width/height and the locked rotation ±θ so it can
@@ -1599,6 +1660,10 @@
       if (spawnInterval) {
         clearInterval(spawnInterval);
         spawnInterval = null;
+      }
+      if (window._stimulusHardStopTimer) {
+        clearTimeout(window._stimulusHardStopTimer);
+        window._stimulusHardStopTimer = null;
       }
       window.responseGiven = false;
       // Track trial start time for latency measurement
@@ -1972,10 +2037,11 @@
         const defaultStimDurationSec = 4;
         const SPEED_PX_PER_SEC = totalDistancePx / defaultStimDurationSec;
         const baseDurationMs = (totalDistancePx / SPEED_PX_PER_SEC) * 1000; // ms
-        // 100% = baseline speed; 200% = 2x faster (shorter duration)
-        const speedMultiplier = (selections.difficulty === 'adaptive')
-          ? Math.max(0.1, (selections.adaptiveSpeedMultiplier || 1.0))
-          : 1.0;
+        // Apply per-difficulty speed multiplier (independent of stimulus duration)
+        let speedMultiplier = getDifficultySpeedMultiplier(usedDifficulty);
+        if (usedDifficulty === 'adaptive') {
+          speedMultiplier *= Math.max(0.1, (selections.adaptiveSpeedMultiplier || 1.0));
+        }
         const adjustedDurationMs = baseDurationMs / speedMultiplier;
         img.style.animation = `${animName} ${adjustedDurationMs}ms linear 0ms forwards`;
         img.style.transform = `rotate(${angle}deg)`;
@@ -1993,17 +2059,19 @@
         });
       }
 
+      // Apply per-difficulty speed multiplier for stream engine paths
+      const diffSpeedMultBase = getDifficultySpeedMultiplier(usedDifficulty);
       if (usedDifficulty === 'hard') {
         // Unified stream engine at 67.5°
-        startStreamEngine(hardDir, 67.5);
+        startStreamEngine(hardDir, 67.5, diffSpeedMultBase);
       } else if (usedDifficulty === 'medium') {
-        startStreamEngine(window._mediumDir, 45);
+        startStreamEngine(window._mediumDir, 45, diffSpeedMultBase);
       } else if (usedDifficulty === 'adaptive') {
-        const speedMult = selections.adaptiveSpeedMultiplier || 1.0;
+        const speedMult = (selections.adaptiveSpeedMultiplier || 1.0) * diffSpeedMultBase;
         startStreamEngine(window._adaptiveDir, ADAPTIVE_ANGLES[adaptiveState.level], speedMult);
       } else if (usedDifficulty === 'veryHard') {
         // Unified stream engine at 75°
-        startStreamEngine(veryHardDir, 75);
+        startStreamEngine(veryHardDir, 75, diffSpeedMultBase);
       } else {
         // non-Hard: existing multi-spawn behavior
         // Start immediately
@@ -2021,6 +2089,9 @@
           spawnAnimal();
         }, spawnGap);
       }
+
+      // Schedule a hard stop so total stimulus time reflects the user's setting
+      window._stimulusHardStopTimer = setTimeout(endStimulusNow, stimDuration);
 
       // --- Generic Stream Engine: continuous train for any |θ| ---
       // dir: 'TL_BR' | 'BR_TL' | 'TR_BL' | 'BL_TR'
@@ -2374,6 +2445,11 @@
 
       // Log distractor usage for this trial
       // Append trial metadata for logging and analytics
+      // Compute and store effective speed multiplier for this trial
+      const effSpeedMult = (usedDifficulty === 'adaptive')
+        ? (getDifficultySpeedMultiplier('adaptive') * (selections.adaptiveSpeedMultiplier || 1.0))
+        : getDifficultySpeedMultiplier(usedDifficulty);
+
       trialResults.push({
         type: distractorType,
         correct: false,
@@ -2384,7 +2460,7 @@
         latency: null,
         streakUp: adaptiveState.streakUp,
         streakDown: adaptiveState.streakDown,
-        speedMultiplier: (selections.difficulty === 'adaptive') ? (selections.adaptiveSpeedMultiplier || 1.0) : 1.0,
+        speedMultiplier: Number(effSpeedMult.toFixed(2)),
         spacingPx: 180,
         laneLengthPx: null,
         spriteW: null,
@@ -2623,10 +2699,10 @@
         groupedData.forEach((group, index) => {
           let label;
           if (difficultyMode === 'adaptive') {
-            const difficultyGroup = ['Easy', 'Medium', 'Hard', 'Very Hard'][index % 4];
+            const difficultyGroup = ['Easy', 'Medium', 'Difficult', 'Very Difficult'][index % 4];
             label = `${difficultyGroup} difficulty`;
           } else {
-            label = `${difficultyMode.charAt(0).toUpperCase() + difficultyMode.slice(1)} difficulty`;
+            label = `${displayDifficultyName(difficultyMode)} difficulty`;
           }
           labels.push(label);
           correctData.push(group.correct);
@@ -2735,7 +2811,7 @@
           plugins: {
             title: {
               display: true,
-              text: `${title} (${selections.difficulty === 'adaptive' ? 'Increasing Difficulty' : selections.difficulty.charAt(0).toUpperCase() + selections.difficulty.slice(1) + ' difficulty'})`,
+              text: `${title} (${selections.difficulty === 'adaptive' ? 'Increasing Difficulty' : displayDifficultyName(selections.difficulty) + ' difficulty'})`,
               font: { size: 18 },
             },
             legend: { labels: { boxWidth: 16 } },
@@ -2801,7 +2877,7 @@
         const typeCls = `type-${type}`;
         const goesRight = !!t.goesRight;
         const corner = t.corner || '';
-        const angle = (typeof t.angleDeg === 'number') ? `${t.angleDeg}°` : '—';
+        const angleNum = (typeof t.angleDeg === 'number') ? `${t.angleDeg}°` : '—';
         const latency = (t.latencyMs != null) ? `${t.latencyMs} ms` : 'miss';
         const speedMult = (t.speedMultiplier && t.speedMultiplier !== 1) ? `×${t.speedMultiplier}` : '×1.0';
         // Minimal card by default; advanced details move inside .details
@@ -2810,11 +2886,12 @@
             <h4>Trial ${idx}</h4>
             <div class="meta">
               <span class="badge ${typeCls}">${type}</span>
-              <span>${correct ? 'Correct' : (missed ? 'Missed' : 'Incorrect')}</span>
-              <span>• RT: ${latency}</span>
+              <div>Response: ${correct ? 'Correct' : (missed ? 'Missed' : 'Incorrect')}</div>
+              <div>Level: ${t.level ?? '—'} (${angleNum})</div>
+              <div>Drift: ${goesRight ? 'Right' : 'Left'}</div>
             </div>
             <div class="details">
-              <div>Level: ${t.level ?? '—'} • Angle: ${angle}</div>
+              <div>Level: ${t.level ?? '—'} • Angle: ${angleNum}</div>
               <div>Corner: ${corner} • Drift: ${goesRight ? 'Right' : 'Left'}</div>
               <div>Speed: ${speedMult} • Spacing: ${t.spacingPx ?? 180}px</div>
               <div>Lane Length: ${t.laneLengthPx ?? '—'} px • Sprite: ${t.spriteW ?? '—'}×${t.spriteH ?? '—'}</div>
@@ -2825,9 +2902,13 @@
       });
       html.push('</div>');
       timeline.innerHTML = html.join('');
-      // Toggle card details on click
-      timeline.querySelectorAll('.result-card').forEach(card => {
-        card.addEventListener('click', () => card.classList.toggle('open'));
+      // Toggle card details on click (open only one at a time)
+      const cards = timeline.querySelectorAll('.result-card');
+      cards.forEach(card => {
+        card.addEventListener('click', () => {
+          cards.forEach(c => { if (c !== card) c.classList.remove('open'); });
+          card.classList.toggle('open');
+        });
       });
     }
 
@@ -2942,6 +3023,10 @@
       if (spawnInterval) {
         clearInterval(spawnInterval);
         spawnInterval = null;
+      }
+      if (window._stimulusHardStopTimer) {
+        clearTimeout(window._stimulusHardStopTimer);
+        window._stimulusHardStopTimer = null;
       }
       activeAnimals = 0;
       countdownStarted = false;
@@ -3078,7 +3163,7 @@
       sortedDocs.forEach(doc => {
         const data = doc.data();
         const gameId = doc.id.replace("Trial", "Game");
-        labels.push(`${gameId} (${data.difficulty.charAt(0).toUpperCase() + data.difficulty.slice(1)})`);
+        labels.push(`${gameId} (${displayDifficultyName(data.difficulty)})`);
         const correct = parseInt(data.score.split("/")[0]);
         const total = parseInt(data.score.split("/")[1]);
         scores.push(correct);
@@ -3257,7 +3342,7 @@
         const row = document.createElement("tr");
         row.innerHTML = `
           <td style="border: 1px solid #ccc; padding: 8px;">${doc.id}</td>
-          <td style="border: 1px solid #ccc; padding: 8px;">${data.difficulty}</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">${displayDifficultyName(data.difficulty)}</td>
           <td style="border: 1px solid #ccc; padding: 8px;">${correct}</td>
           <td style="border: 1px solid #ccc; padding: 8px;">${data.numTrials || total || ''}</td>
           <td style="border: 1px solid #ccc; padding: 8px;">${data.stimulusDuration}s</td>
