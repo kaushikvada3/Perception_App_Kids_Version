@@ -806,6 +806,9 @@
         <label for="authPassword">Password:</label>
         <input type="password" id="authPassword" placeholder="Enter password" style="width:95%; padding:10px; font-size: 1.1em;" />
       </div>
+      <div style="text-align: right; margin-bottom: 5px;">
+        <a href="#" onclick="showResetPassword()" style="color: #FFD700; font-size: 0.9em; text-decoration: underline;">Forgot Password?</a>
+      </div>
       <div class="form-group" style="display: flex; justify-content: space-around; margin-top: 15px;">
         <button type="button" onclick="showRegister()" style="background-color:#1E90FF;">Register</button>
         <button type="button" id="login-btn" onclick="loginUser()" style="background-color:#28a745;">Login</button>
@@ -828,6 +831,25 @@
       <a href="#" onclick="showLogin()">Back to Login</a>
     </div>
   </div>
+
+  <div class="container">
+    <div id="resetPasswordPage" style="display:none; max-width: 700px; width: 90%; background-color: rgba(0, 0, 0, 0.6); margin: 50px auto; padding: 30px 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);">
+      <h2 style="font-size: 2em; margin-bottom: 25px; color: #fff; text-shadow: 1px 1px 3px #000;">Reset Password</h2>
+      
+      <label for="resetUsername" style="display: block; margin-left: 5%; margin-bottom: 5px; font-weight: bold; color: #fff; font-size: 1.1em;">Username:</label>
+      <input type="text" id="resetUsername" placeholder="Enter your username" style="width: 90%; padding: 12px; font-size: 1.1em; margin-bottom: 15px; background-color: #fefbd8; color: #333; border: 2px solid #FFD700; border-radius: 10px; font-family: 'Comic Sans MS', cursive, sans-serif;">
+      
+      <label for="resetName" style="display: block; margin-left: 5%; margin-bottom: 5px; font-weight: bold; color: #fff; font-size: 1.1em;">Your Name (as registered):</label>
+      <input type="text" id="resetName" placeholder="Enter your full name" style="width: 90%; padding: 12px; font-size: 1.1em; margin-bottom: 15px; background-color: #fefbd8; color: #333; border: 2px solid #FFD700; border-radius: 10px; font-family: 'Comic Sans MS', cursive, sans-serif;">
+      
+      <label for="resetNewPassword" style="display: block; margin-left: 5%; margin-bottom: 5px; font-weight: bold; color: #fff; font-size: 1.1em;">New Password:</label>
+      <input type="password" id="resetNewPassword" placeholder="Enter new password" style="width: 90%; padding: 12px; font-size: 1.1em; margin-bottom: 15px; background-color: #fefbd8; color: #333; border: 2px solid #FFD700; border-radius: 10px; font-family: 'Comic Sans MS', cursive, sans-serif;">
+      
+      <button onclick="submitPasswordReset()" style="padding: 12px 30px; font-size: 1.2em; border: none; border-radius: 10px; background-color: #FF8C00; color: white; cursor: pointer; box-shadow: 0 0 10px #fff, 0 0 20px #FF8C00; transition: transform 0.2s; margin-top: 10px;">Reset Password</button>
+      
+      <a href="#" onclick="showLogin()" style="display: block; margin-top: 20px; font-size: 1em; color: #FFD700; text-decoration: underline;">Back to Login</a>
+    </div>
+  </div>
   <script>
     // Handles switching to the registration form view
     function showRegister() {
@@ -839,8 +861,54 @@
     // Switches back to the login form view
     function showLogin() {
       document.getElementById('registerPage').style.display = 'none';
+      document.getElementById('resetPasswordPage').style.display = 'none';  // Also hide reset
       document.getElementById('authContainer').style.display = 'block';
       setBackHomeVisible(false);
+    }
+
+    function showResetPassword() {
+      document.getElementById('authContainer').style.display = 'none';
+      document.getElementById('resetPasswordPage').style.display = 'block';
+      setBackHomeVisible(false);
+    }
+
+    function submitPasswordReset() {
+      const username = document.getElementById('resetUsername').value.trim();
+      const name = document.getElementById('resetName').value.trim();
+      const newPassword = document.getElementById('resetNewPassword').value.trim();
+
+      if (!username || !name || !newPassword) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      const userRef = db.collection("users").doc(username);
+
+      userRef.get().then((doc) => {
+        if (doc.exists) {
+          const userData = doc.data();
+          // Case-insensitive name match for better UX? Or strict? 
+          // Let's go with exact match for security as per plan.
+          if (userData.name === name) {
+            userRef.update({
+              password: newPassword
+            }).then(() => {
+              alert("Password successfully reset! Please login with your new password.");
+              showLogin();
+            }).catch((error) => {
+              console.error("Error updating password: ", error);
+              alert("Error updating password. Please try again.");
+            });
+          } else {
+            alert("Identity verification failed. Name does not match records.");
+          }
+        } else {
+          alert("Username not found.");
+        }
+      }).catch((error) => {
+        console.error("Error finding user: ", error);
+        alert("An error occurred. Please try again.");
+      });
     }
 
     // Submits registration info and creates a new user in Firestore
