@@ -809,6 +809,7 @@
       <div class="form-group" style="display: flex; justify-content: space-around; margin-top: 15px;">
         <button type="button" onclick="showRegister()" style="background-color:#1E90FF;">Register</button>
         <button type="button" id="login-btn" onclick="loginUser()" style="background-color:#28a745;">Login</button>
+        <button type="button" onclick="startDemoMode()" style="background-color:#FF8C00;">Demo Mode</button>
       </div>
       <div id="loginErrorMessage" style="display: none; color: red; margin-top: 10px;"></div>
     </form>
@@ -1327,6 +1328,30 @@
         loginButton.disabled = false;
         loginButton.textContent = "Login";
       });
+    }
+
+    // --- DEMO MODE FUNCTION ---
+    function startDemoMode() {
+      console.log("Starting Demo Mode...");
+      loggedInUser = "Demo User"; 
+      
+      const showHome = () => {
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('home').style.display = 'block';
+        
+        // Show sign-out button
+        document.getElementById("signOutBtn").style.display = "block";
+        setBackHomeVisible(false);
+
+        // Clear any previous error messages
+        const errorMessage = document.getElementById("loginErrorMessage");
+        if (errorMessage) {
+          errorMessage.style.display = "none";
+          errorMessage.textContent = "";
+        }
+      };
+
+      showHome();
     }
     // === UTILITY: IMAGE PRELOADING ===
     // Preload all images to avoid lag
@@ -2612,6 +2637,13 @@
       };
 
       const userRef = db.collection("users").doc(loggedInUser);
+
+      // --- DEMO MODE CHECK ---
+      if (loggedInUser === "Demo User") {
+        console.log("Demo Mode: Session data NOT saved to Firestore.");
+        return; 
+      }
+      // -----------------------
 
       userRef.get().then(doc => {
         if (doc.exists) {
